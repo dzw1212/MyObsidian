@@ -1,0 +1,216 @@
+{
+  "main": {
+    "id": "1cd194953bb82657",
+    "type": "split",
+    "children": [
+      {
+        "id": "e20205132f7236cb",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "8d0d7eca25a6bcc8",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "OpenGL/Attachment.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "1280bd5df14e2cd9",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Misc/yaml语法.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "c9d361962a8ebb6d",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "C++/yaml-cpp.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "edbc27c5f7c1c1da",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "游戏引擎/Gizmo/ImGuizmo.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          }
+        ],
+        "currentTab": 3
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "5ae388795bdee37e",
+    "type": "split",
+    "children": [
+      {
+        "id": "9ab8391c8161e0db",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "cf4c4b958c01016f",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "79dbf977e8b4f85d",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "2fb2382a9262d2e7",
+            "type": "leaf",
+            "state": {
+              "type": "starred",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 200
+  },
+  "right": {
+    "id": "2bb1ee5891f94e6a",
+    "type": "split",
+    "children": [
+      {
+        "id": "a82bbf67a64735b3",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "54d4fb4b17d01ce1",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "游戏引擎/Gizmo/ImGuizmo.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "254bc5cbd0b96a01",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "游戏引擎/Gizmo/ImGuizmo.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "e2b273a5fb32ff03",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "e544a6bfd955492e",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "游戏引擎/Gizmo/ImGuizmo.md"
+              }
+            }
+          }
+        ],
+        "currentTab": 3
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "canvas:新建白板": false,
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false
+    }
+  },
+  "active": "cf4c4b958c01016f",
+  "lastOpenFiles": [
+    "README.md",
+    "MyObsidian/README.md",
+    "MyObsidian",
+    "未命名 2.canvas",
+    "游戏引擎/摄像机/万向死锁 Gimbal Lock.md",
+    "未命名 1.canvas",
+    "游戏引擎/摄像机/四元数.md",
+    "未命名.canvas",
+    "游戏引擎/Shader/GLSL.md",
+    "游戏引擎/Shader",
+    "游戏引擎/Gizmo/ImGuizmo.md",
+    "游戏引擎/摄像机",
+    "游戏引擎/未命名.md",
+    "游戏引擎/Gizmo",
+    "C++/yaml-cpp.md",
+    "C++/CRTP设计模式.md",
+    "C++/友元函数与友元类.md",
+    "Misc/yaml语法.md",
+    "OpenGL/Attachment.md",
+    "游戏引擎/ECS/EnTT/ECS.md",
+    "C++/lambda表达式.md",
+    "C++/std/function.md",
+    "C++/公有、保护、私有继承.md",
+    "C++/weak_ptr使用场景.md",
+    "C++/变长模板参数.md",
+    "游戏引擎/ECS/EnTT/核心功能.md"
+  ]
+}
