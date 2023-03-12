@@ -1,0 +1,2 @@
+# MyObsidian
+for sync
