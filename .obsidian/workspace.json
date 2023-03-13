@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "OpenGL/Attachment.md",
+                "file": "游戏引擎/Shader/GLSL.md",
                 "mode": "source",
                 "source": false
               }
@@ -55,8 +55,7 @@
               }
             }
           }
-        ],
-        "currentTab": 3
+        ]
       }
     ],
     "direction": "vertical"
@@ -122,7 +121,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "游戏引擎/Gizmo/ImGuizmo.md",
+                "file": "游戏引擎/Shader/GLSL.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -139,7 +138,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "游戏引擎/Gizmo/ImGuizmo.md",
+                "file": "游戏引擎/Shader/GLSL.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -162,7 +161,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "游戏引擎/Gizmo/ImGuizmo.md"
+                "file": "游戏引擎/Shader/GLSL.md"
               }
             }
           }
@@ -171,8 +170,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -184,9 +182,12 @@
       "command-palette:打开命令面板": false
     }
   },
-  "active": "cf4c4b958c01016f",
+  "active": "8d0d7eca25a6bcc8",
   "lastOpenFiles": [
+    "OpenGL/VertexArray.md",
     "README.md",
+    "图形学/阴影/PCF-PCSS.md",
+    "OpenGL/Attachment.md",
     "MyObsidian/README.md",
     "MyObsidian",
     "未命名 2.canvas",
@@ -204,7 +205,6 @@
     "C++/CRTP设计模式.md",
     "C++/友元函数与友元类.md",
     "Misc/yaml语法.md",
-    "OpenGL/Attachment.md",
     "游戏引擎/ECS/EnTT/ECS.md",
     "C++/lambda表达式.md",
     "C++/std/function.md",
