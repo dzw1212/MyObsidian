@@ -43,9 +43,32 @@ project "HelloWorld"
 
 ## 语法
 
+### 函数与参数
+
+每一行都是一个函数调用，为了便于阅读，通常可以省略括号：
 ```lua
 workspace "HelloWorld" --等同于 workspace("HelloWorld")
+```
 
+但是如果是使用变量或者拼接字符串作为参数，则不能省略括号：
+```lua
+local lang = "C++"  
+language (lang)  
+  
+workspace("HelloWorld" .. _ACTION)
+```
+
+
+### 值与列表
+
+premake的大多数函数接受单个字符串或者字符串列表作为参数，如果碰到多个值，以最后一个为准；
+```lua
+language "C++"   -- the value is now "C++"
+language "C"     -- the value is now "C"
+```
+
+列表支持组合和移除值；
+```lua
 --参数可以组合
 defines { "DEBUG", "TRACE" }
 defines { "WINDOWS" }         -- 当前列表为 { "DEBUG", "TRACE", "WINDOWS" }
@@ -54,6 +77,328 @@ defines { "WINDOWS" }         -- 当前列表为 { "DEBUG", "TRACE", "WINDOWS" }
 defines { "DEBUG", "TRACE" }
 removedefines { "TRACE" }     -- 当前列表为 { "DEBUG" }
 ```
+
+### 路径
+
+1. 路径始终相对于脚本文件所在的路径；
+2. 使用"/"作为路径分隔符；
+
+### 工作区 workspace
+
+使用关键词`workspace`定义；
+每个build都有一个workspace作为project的容器，对应于VS中的solution；
+workspace定义一组通用的configuration和platform，用于其所包含的所有project；
+```lua
+workspace "HelloWorld"
+   configurations { "Debug", "Release" }
+```
+
+### 配置 configuration
+
+使用关键词`configurations`定义；
+configuration是一系列设置的集合，包括标志flags、开关switch、头文件、库搜索目录等；
+大多数IDE提供的默认配置为`Debug`和`Release`，但是配置名不仅限于这些名称，可以使用你喜欢的任意名称，这些名称是没有意义的，有意义的是名称所对应的一系列设置；
+```lua
+workspace "HelloWorld"
+   configurations { "Debug", "Release" }
+
+   filter "configurations:Debug" --配置Debug相关设置
+      defines { "DEBUG" }
+      flags { "Symbols" }
+
+   filter "configurations:Release" --配置Release相关设置
+      defines { "NDEBUG" }
+      optimize "On"
+```
+
+project无法向workspace中添加配置，只能删除对现有配置的支持，或者使用`configmap`将其映射到其他项目配置；
+```lua
+workspace "MyWorkspace"
+    configurations { "Debug", "Development", "Profile", "Release" }
+
+project "UnitTest"
+    configmap {
+        ["Development"] = "Debug",
+        ["Profile"] = "Release"
+    }
+```
+
+
+### 平台 platform
+
+使用关键词`platforms`定义；
+实际上，平台只是另一组用于构建配置的名称，提供了另一个用于配置项目的轴，可以使用某个configuration+某个平台的任意组合；
+类似于configuration，platform的名称本身没有意义，对应的设置才有意义；
+```lua
+configurations { "Debug", "Release" }
+platforms { "Win32", "Win64", "Xbox360" }
+
+filter { "platforms:Win32" }
+    system "Windows"
+    architecture "x86"
+
+filter { "platforms:Win64" }
+    system "Windows"
+    architecture "x86_64"
+
+filter { "platforms:Xbox360" }
+    system "Xbox360"
+```
+
+不同于configuration的是，platform是可选的，如果不设置则使用默认行为；
+
+### 过滤器 filter
+
+使用关键词`filter`定义；
+filter用于提取特定的configuration、platform、operating system、target action等，将后续的设置限制在特定的环境内；
+filter的格式为`Prefix:MatchPattern`；
+
+其中前缀支持的有（如果未指定前缀，则默认为configurations）：
+1. action
+2. architecture
+3. configurations
+4. files
+5. kind
+6. language
+7. options
+8. platforms
+9. system
+10. toolset
+
+
+```lua
+workspace "MyWorkspace"  
+	configurations { "Debug", "Release" }  
+  
+	filter "configurations:Debug"  
+		defines { "_DEBUG" } --定义仅适用于调试版本的符号
+	
+	filter "action:vs2010"  --仅在面向 Visual Studio 2010 时定义符号
+		defines { "VISUAL_STUDIO_2005" }
+
+	filter "action:vs*"  --为所有版本的 Visual Studio 定义一个符号
+		defines { "VISUAL_STUDIO" }
+
+	filter "kind:SharedLib or StaticLib"  --动态库或静态库
+		defines { "LIBRARY_TARGET" }
+
+	filter { "action:gmake*", "toolset:gcc" }  --gmake且g++
+		buildoptions {  
+			"-Wall", "-Wextra", "-Werror"  
+		}
+
+	-- Using an option like --renderer=opengl  
+	filter "options:renderer=opengl"  
+		files { "src/opengl/**.cpp" }
+
+	filter "files:*.png"  --设置所有的png文件
+		buildaction "Embed"
+
+	filter "system:not windows"  --非window
+		defines { "NOT_WINDOWS" }
+	
+	filter {}  --未定义任何筛选条件，适用于所有配置
+		files { "**.cpp" }
+```
+
+### 生成选项 buildSettings
+
+#### kind
+
+关键词`kind ("kind")`；
+设置创建对象的二进制类型，是可执行文件还是库文件；
+|可选类型|描述|
+|:-:|:-|
+|ConsoleApp|控制台或命令行程序|
+|WindowedApp|运行在桌面端的应用，这个区分在Linux上没什么用，但在windows和Max OS上很重要|
+|SharedLib|共享库或DLL|
+|StaticLib|静态库|
+|Makefile|用于调用外部命令，实际没有指定二进制文件的类型|
+|Utility|仅包含自定义生成规则|
+|None|适用于仅包含网页、头文件或文档的项目|
+|Packaging|用于创建.androidproj文件构建apk|
+|SharedItems|不指定自身的生成选项，使用链接它的任何其他项目的生成选项|
+
+#### files,removefiles
+
+关键词`files {"file_list"}`；
+设置源代码文件，通过一个或者多个文件模式来匹配对应的文件，多余的文件使用`removefiles()`移除；
+```lua
+files { "hello.cpp", "goodbye.cpp" } --从当前目录添加两个文件
+
+files { "src/*.cpp" } --添加src目录下的所有cpp文件（不包含子目录）
+
+files { "src/**.cpp" } --添加src目录下的所有cpp文件（包含子目录）
+```
+
+#### defines
+
+关键词`defines { "symbols" }`；
+定义编译或预处理符号；
+```lua
+defines { "DEBUG", "TRACE" }
+
+defines { "CALLSPEC=__dllexport" }
+```
+
+#### includedirs
+
+关键词`includedirs { "paths" }`；
+指定包含目录；
+```lua
+includedirs { "../lua/include", "../zlib" }
+
+includedirs { "../includes/**" }
+```
+
+#### pchheader,pchsource
+
+指定预编译头；
+```lua
+pchheader "stdafx.h"
+pchsource "stdafx.cpp" --在VS中需要指定预编译源文件，其他IDE一般只需要头文件即可
+```
+
+#### links,libdirs
+
+`links { "Reference" }`指定链接库或项目；
+```lua
+workspace "MyWorkspace"
+   configurations { "Debug", "Release" }
+   language "C++"
+
+   project "MyExecutable"
+      kind "ConsoleApp"
+      files "**.cpp"
+      links { "MyLibrary" }
+
+   project "MyLibrary"
+      kind "SharedLib"
+      files "**.cpp"
+```
+
+```lua
+workspace "MyWorkspace"  
+	configurations { "Debug", "Release" }  
+	language "C++"  
+	  
+	project "MyExecutable"  
+	kind "ConsoleApp"  
+	files "**.cpp"  
+	links { "LibraryA:static", "LibraryB:shared" } --链接同时指定链接类型
+```
+
+`libdirs { "paths" }`指定库的搜索目录；
+```lua
+libdirs { "../lua/libs", "../zlib" }
+
+libdirs { "../libs/**" }
+```
+
+#### symbols
+
+关键词`symbols "switch"`；
+启用调试信息；
+
+```lua
+project "MyProject"
+    symbols "On"
+```
+
+#### optimize
+
+关键词`optimize "value"`；
+指定优化级别；
+|可选项|描述|
+|:-:|:-|
+|Off|无任何优化|
+|On|较为平衡的优化|
+|Debug|支持调试的优化|
+|Size|大小越小越好的优化
+|Speed|速度越快越好的优化|
+|Full|完全优化|
+
+#### buildoptions,linkoptions
+
+关键词`buildoptions { "options" }`；
+添加编译参数；
+```lua
+filter { "system:linux", "action:gmake" }
+	buildoptions { "`wx-config --cxxflags`", "-ansi", "-pedantic" }
+```
+
+关键词`linkoptions { "options" }`；
+添加链接参数；
+```lua
+filter { "system:linux", "action:gmake" }
+	linkoptions { "`wx-config --libs`" }
+```
+
+#### targetname,targetdir
+
+设置编译目标的名字或者位置；
+```lua
+project "MyProject"
+
+	targetname "my_project"
+
+	filter { "configurations:Debug" }
+	    targetdir "bin/debug"
+
+	filter { "configurations:Release" }
+	    targetdir "bin/release"
+```
+
+### 命令行参数
+
+premake支持两种类型的命令行参数：actions和options；
+```lua
+-- delete a file if the clean action is running
+if _ACTION == "clean" then
+   -- do something
+end
+
+-- use an option value in a configuration
+targetdir ( _OPTIONS["outdir"] or "out" )
+```
+
+#### 创建新的option
+
+```lua
+newoption {
+   trigger = "gfxapi",
+   value = "API",
+   description = "Choose a particular 3D API for rendering",
+   allowed = {
+      { "opengl",    "OpenGL" },
+      { "direct3d",  "Direct3D (Windows only)" },
+      { "software",  "Software Renderer" }
+   },
+   default = "opengl"
+}
+
+filter { "options:gfxapi=opengl" }
+   links { "opengldrv" }
+
+filter { "options:gfxapi=direct3d" }
+    links { "direct3ddrv" }
+
+filter { "options:gfxapi=software" }
+    links { "softwaredrv" }
+```
+
+#### 创建新的action
+
+```lua
+newaction {
+   trigger     = "install",
+   description = "Install the software",
+   execute = function ()
+      -- copy files, etc. here
+   end
+}
+```
+
 
 ### 作用域
 
