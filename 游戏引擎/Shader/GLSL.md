@@ -292,10 +292,142 @@ layout (std140) uniform ExampleBlock
 
 #### packed布局
 
-紧凑布局的==效率是最高的==，但是当使用紧凑布局时，无法保证该布局在不同程序不同硬件下是不变的，并且其允许编译器将uniform变量从uniform块中优化掉；
+==紧凑布局的效率是最高的==，但是当使用紧凑布局时，无法保证该布局在不同程序不同硬件下是不变的，并且其允许编译器将uniform变量从uniform块中优化掉；
 
 ### UBO的使用方式
 
+#### 创建
+
+```c
+unsigned int uboExampleBlock;
+glGenBuffers(1, &uboExampleBlock);
+```
+
+#### 绑定
+
+```c
+glBindBuffer(GL_UNIFORM_BUFFER, uboExampleBlock);
+```
+
+#### 分配内存大小
+
+```c
+glBufferData(GL_UNIFORM_BUFFER, 152, NULL, GL_STATIC_DRAW); // 分配152字节的内存
+```
+
+#### 插入数据
+
+Step1. 将uniform块绑定到一个特定的绑定点上
+
+方法一、使用`glUniformBlockBinding`+`glGetUniformBlockIndex`；
+```c
+unsigned int lights_index = glGetUniformBlockIndex(shaderA.ID, "Lights");   
+glUniformBlockBinding(shaderA.ID, lights_index, 2); 
+//将Lights对应的uniform块链接到绑定点2
+//需要对每个着色器重复该步骤
+```
+
+方法二、使用布局标识符`binding`；
+```c
+layout(std140, binding = 2) uniform Lights { ... };
+```
+
+Step2. 绑定uniform缓冲对象到绑定点上；
+
+```c
+glBindBufferBase(GL_UNIFORM_BUFFER, 2, uboExampleBlock); 
+// 或
+glBindBufferRange(GL_UNIFORM_BUFFER, 2, uboExampleBlock, 0, 152); 
+//支持只绑定一部分，让多个uniform块绑定到同一个uniform缓冲对象上
+```
+
+Step3. 向uniform缓冲中添加数据；
+
+```c
+glBindBuffer(GL_UNIFORM_BUFFER, uboExampleBlock);
+int b = true; // GLSL中的bool是4字节的，所以我们将它存为一个integer
+glBufferSubData(GL_UNIFORM_BUFFER, 144, 4, &b); 
+glBindBuffer(GL_UNIFORM_BUFFER, 0);
+```
+
+### UBO示例
+
+```c
+#version 330 core
+layout (location = 0) in vec3 aPos;
+
+layout (std140) uniform Matrices //proj和view不常变化，因此使用UBO
+{
+    mat4 projection;
+    mat4 view;
+};
+uniform mat4 model;
+
+void main()
+{
+    gl_Position = projection * view * model * vec4(aPos, 1.0);
+}
+```
+
+```c
+//将四个Shader中的Matrices块都链接到绑定点0上
+unsigned int uniformBlockIndexRed    = glGetUniformBlockIndex(shaderRed.ID, "Matrices");
+unsigned int uniformBlockIndexGreen  = glGetUniformBlockIndex(shaderGreen.ID, "Matrices");
+unsigned int uniformBlockIndexBlue   = glGetUniformBlockIndex(shaderBlue.ID, "Matrices");
+unsigned int uniformBlockIndexYellow = glGetUniformBlockIndex(shaderYellow.ID, "Matrices");  
+
+glUniformBlockBinding(shaderRed.ID,    uniformBlockIndexRed, 0);
+glUniformBlockBinding(shaderGreen.ID,  uniformBlockIndexGreen, 0);
+glUniformBlockBinding(shaderBlue.ID,   uniformBlockIndexBlue, 0);
+glUniformBlockBinding(shaderYellow.ID, uniformBlockIndexYellow, 0);
+```
+
+```c
+//创建UBO并绑定到绑定点0上，指定范围
+unsigned int uboMatrices
+glGenBuffers(1, &uboMatrices);
+
+glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
+glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 2 * sizeof(glm::mat4));
+```
+
+```c
+//填充proj matrix
+glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)width/(float)height, 0.1f, 100.0f);
+glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(projection));
+glBindBuffer(GL_UNIFORM_BUFFER, 0);
+```
+
+```c
+//填充view matrix
+glm::mat4 view = camera.GetViewMatrix();           
+glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(view));
+glBindBuffer(GL_UNIFORM_BUFFER, 0);
+```
+
+```c
+//绘制
+glBindVertexArray(cubeVAO);
+shaderRed.use();
+glm::mat4 model;
+model = glm::translate(model, glm::vec3(-0.75f, 0.75f, 0.0f));  // 移动到左上角
+shaderRed.setMat4("model", model);
+glDrawArrays(GL_TRIANGLES, 0, 36);        
+// ... 绘制绿色立方体
+// ... 绘制蓝色立方体
+// ... 绘制黄色立方体 
+```
+
+### 优点
+
+1. 一次设置很多uniform比一个一个设置要快很多；
+2. 相比在多个Shader中修改同样的uniform变量，在UBO中修改一次更高效；
+3. 由于OpenGL限制了uniform的数量，因此使用UBO能够使用更多的uniform；
 
 
 # GLSL for Vulkan
