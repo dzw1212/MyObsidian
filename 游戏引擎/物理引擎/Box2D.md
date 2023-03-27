@@ -134,3 +134,194 @@ for (int32 i = 0; i < 60; ++i)
 ## 内存释放
 
 当一个`b2World`离开作用域或被删除时，其下的所有刚体、夹具、关节等都会被释放；但是相关的指针需要手动设为`nullptr`；
+
+# 形状
+
+## 圆形
+
+```c++
+b2CircleShape circle;
+circle.m_p.Set(2.f, 3.f); //圆心
+circle.m_radius(0.5f); //半径
+```
+
+## 多边形
+
+顶点顺序：逆时针缠绕；
+支持的最大顶点数：`b2_maxPolygonVertices = 8`；
+```c++
+b2Vec2 vertices[3];
+vertices[0].Set(0.0f, 0.0f);
+vertices[1].Set(1.0f, 0.0f);
+vertices[2].Set(0.0f, 1.0f);
+
+int32 count = 3;
+
+b2PolygonShape polygon;
+polygon.Set(vertices, count);
+```
+
+```c++
+void SetAsBox(float hx, float hy);
+void SetAsBox(float hx, float hy, const b2Vec2& center, float angle);
+```
+
+## 边缘形状
+
+线段可以和圆形、多边形碰撞，但线段之间不能碰撞，碰撞要求至少其中一方有体积；
+```c++
+b2Vec2 v1(0.0f, 0.0f);
+b2Vec2 v2(1.0f, 0.0f);
+
+b2EdgeShape edge;
+edge.SetTwoSided(v1, v2);
+```
+
+### 幽灵碰撞与幽灵顶点
+
+假设地面由多个线段连接而成，当一个多边形沿着地面滑动时，就会与线段的内部顶点产生碰撞，称为`幽灵碰撞`；
+
+![ghostCollision|300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230328000750.png)
+
+
+Box2D提供了一种叫做`幽灵顶点`的机制，用来避免幽灵碰撞；
+```c++
+b2Vec2 v0(1.7f, 0.0f);
+b2Vec2 v1(1.0f, 0.25f);
+b2Vec2 v2(0.0f, 0.0f);
+b2Vec2 v3(-1.7f, 0.4f);
+
+b2EdgeShape edge;
+edge.SetOneSided(v0, v1, v2, v3); //顺序遵循逆时针缠绕
+```
+
+## 连锁形状
+
+连锁形状提供了一种有效的方法来连接多个线段，能够自动消除幽灵碰撞，并提供单边碰撞；
+```c++
+b2Vec2 vs[4];
+vs[0].Set(1.7f, 0.0f);
+vs[1].Set(1.0f, 0.25f);
+vs[2].Set(0.0f, 0.0f);
+vs[3].Set(-1.7f, 0.4f);
+
+b2ChainShape chain;
+chain.CreateLoop(vs, 4);
+```
+
+```c++
+//连接多个连锁形状
+b2ChainShape::CreateChain(const b2Vec2* vertices,
+						  int32 count,
+						  const b2Vec2& prevVertex,
+						  const b2Vec2& nextVertex）
+```
+
+```c++
+//通过索引访问子线段
+for (int32 i = 0; i < chain.GetChildCount(); ++i)
+{
+	b2EdgeShape edge;
+	chain.GetChildEdge(&edge, i);
+}
+```
+
+# 几何查询
+
+## 形状 + 点
+
+判断形状和点是否重叠；
+如果是边缘形状或连锁形状，则总是返回false；
+```c++
+b2Transform transform;
+transform.SetIdentity();
+b2Vec2 point(5.0f, 2.0f);
+bool hit = shape->TestPoint(transform, point);
+```
+
+## 形状 + RayCast
+
+```c++
+b2Transfrom transform;
+transform.SetIdentity();
+
+b2RayCastInput input;
+input.p1.Set(0.0f, 0.0f);
+input.p2.Set(1.0f, 0.0f);
+input.maxFraction = 1.0f;
+
+int32 childIndex = 0;
+
+b2RayCastOutput output;
+
+bool hit = shape->RayCast(&output, input, transform, childIndex);
+if (hit)
+{
+	b2Vec2 hitPoint = input.p1 + output.fraction * (input.p2 - input.p1)
+}
+```
+
+# 成对函数
+
+## 重叠
+
+测试两个形状之间的重叠情况；
+```c++
+b2Transform xfA = ..., xfB = ...;
+bool overlap = b2TestOverlap(shapeA, indexA, shapeB, indexB, xfA, xfB);
+```
+
+## 接触面
+
+![manifold|300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230328034056.png)
+
+存储在`b2Manifold`中的数据被优化为内部使用，如果需要查看这些数据，最好使用`b2WorldManifold`来生成接触点和法线的世界坐标；
+
+```c++
+b2WorldManifold worldManifold;
+worldManifold.Initialize(&manifold, transformA, shapeA.m_radius, transformB, shapeB.m_radius);
+for (int32 i = 0; i < manifold.pointCount; ++i)
+{
+	b2Vec2 point = worldManifold.point[i];
+}
+```
+
+在移动过程中接触点可能会改变，因此需要查询接触点的状态；
+```c++
+b2PointState state1[2], state2[2];
+b2GetPointStates(state1, state2, &manifold1, &manifold2);
+if (state1[0] == b2_removeState) {}
+```
+
+## 距离
+
+`b2Distance`可以计算两个形状之间的距离；
+
+## 撞击时间
+
+`b2TimeOfImpact`用来确定两个移动形状发生碰撞的时间，以防止隧道效应；该函数需要两个形状和两个`b2Sweep`结构，该结构中定义了形状的初始和最终变换；
+
+# 动态模块
+
+## 刚体的分类
+
+- `b2_staticBody`：静态体，不会移动，具有无限的质量，不与其他刚体发生碰撞；
+- `b2_kinematicBody`：运动体，根据速度移动，具有无限的质量，不与其他刚体发生碰撞；
+- `b2_dynamicBody`：动态体，根据受力移动，总是具有非零的有限的质量，能够与所有类型的刚体碰撞；
+
+## 刚体的定义
+
+`b2BodyDef`结构体含有创建和初始化刚体所需的数据，可以使用同一个定义来创建多个刚体；
+
+### 类型
+
+类型分为三种：静态体、运动体和动态体；
+应该在创建刚体时指定类型，否则后续修改类型的开销很高；
+```c++
+b2BodyDef bodyDef;
+bodyDef.type = b2_dynamicBody;
+```
+
+### 角度和位置
+
+在创建时指定tranform，比先创建再移动的性能要好很多；
