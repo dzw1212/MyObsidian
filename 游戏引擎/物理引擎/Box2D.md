@@ -325,3 +325,338 @@ bodyDef.type = b2_dynamicBody;
 ### 角度和位置
 
 在创建时指定tranform，比先创建再移动的性能要好很多；
+
+一个刚体有两个重要的点：
+- 原点：夹具和关节都是基于原点来连接刚体；
+- 质心：质心有附加形状的质量分布所决定，或者由`b2MassData`显式指定；
+
+创建刚体的时候一般不知道质心，但会指定原点，如果后续刚体的质量属性发生变化，质心的位置会变化，但原点一般不变；
+```c++
+b2BodyDef bodyDef;
+bodyDef.position.Set(0.0f, 2.0f); //设置原点
+bodyDef.angle = 0.25f * b2_pi;
+```
+
+### 阻尼
+
+阻尼（Damping）用来减少刚体的速度，是一种广义上的阻力；
+阻尼与摩擦不同，摩擦只有在接触的时候才会产生，阻尼不能代替摩擦，两者是共存的；
+
+阻尼的大小应该在0到无穷大之间，推荐使用0到0.1之间的值；
+```c++
+b2BodyDef bodyDef;
+bodyDef.linearDamping = 0.0f; //线性阻尼
+bodyDef.AngularDamping = 0.01f; //角阻尼
+```
+
+### 重力因子
+
+可以使用重力因子（Gravity Scale）单独设置某个刚体的重力；
+```c++
+b2BodyDef bodyDef;
+bodyDef.gravityScale = 0.0f;
+```
+
+### 休眠
+
+每时每刻模拟World下的所有刚体的性能开销是非常大的，如果一个刚体允许休眠，其会在静态时进入休眠状态，以减小模拟的性能开销；
+当一个休眠的刚体与一个活动的刚体碰撞时，会被唤醒；
+```c++
+b2BodyDef bodyDef;
+bodyDef.allowSleep = true;
+bodyDef.awake = true;
+```
+
+### 固定旋转
+
+相当于禁止了旋转；
+```c++
+b2BodyDef bodyDef;
+bodyDef.fixedRotation = true;
+```
+
+### 子弹
+
+为了性能考虑动态刚体一般不启用连续碰撞检测（CCD），这可能会导致隧道效应；
+Box2D中快速移动的物体可以被标记为子弹，子弹将对静态和动态物体启用CCD；
+```c++
+b2BodyDef bodyDef;
+bodyDef.bullet = true;
+```
+
+### 激活
+
+类似于休眠状态，一个刚体可以被标记为非激活状态，这意味着这个刚体不参与碰撞检测、射线投射等；
+刚体可以被重新激活，但是激活一个刚体的开销几乎等同于重新创建一个刚体；
+```c++
+b2BodyDef bodyDef;
+bodyDef.active = true;
+```
+
+### 用户数据
+
+```c++
+b2BodyDef bodyDef;
+bodyDef.userData.pointer = reinterpret_cast<uintptr_t>(&myActor);
+```
+
+## 刚体的设置
+
+### 质量属性
+
+一个体有质量（标量）、质心（向量）和转动惯量（标量）；
+对于静态体，质量和转动惯量被设置为零；当一个刚体有固定的旋转时，其转动惯量为零；
+
+通常情况下，当刚体附加到一个夹具上时，质量属性会自动建立；也可以在运行时显式设置一个质量属性；
+```c++
+void b2Body::SetMassData(const b2MassData* data);
+
+void b2Body::ResetMassData(); //恢复到由夹具决定的质量属性
+
+float b2Body::GetMass() const;
+
+float b2Body::GetInertia(); //惯性
+
+const b2Vec2& b2Body::GetLocalCenter() const;
+
+void b2Body::GetMassData(b2MassData* data) const;
+```
+
+### 状态信息
+
+```c++
+void b2Body::SetType(b2BodyType type);
+b2BodyType b2Body::GetType();
+
+void b2Body::SetBullet(bool flag;
+bool b2Body::IsBullet() const;
+
+void b2Body::SetSleepingAllowed(bool flag);
+bool b2Body::IsSleepingAllowed() const;
+
+void b2Body::SetAwake(bool flag);
+bool b2Body::IsAwake() const;
+
+void b2Body::SetEnabled(bool flag);
+bool b2Body::IsEnabled() const;
+
+void b2Body::SetFixedRotation(bool flag);
+bool b2Body::IsFixedRotation() const;
+```
+
+### 位置和速度
+
+```c++
+bool b2Body::SetTransform(const b2Vec2& position, float angle);
+const b2Transform& b2Body::GetTransform() const;
+
+const b2Vec2& b2Body::GetPosition() const;
+
+float b2Body::GetAngle() const;
+
+const b2Vec2& b2Body::GetWorldCenter() const;
+const b2Vec2& b2Body::GetLocalCenter() const;
+```
+
+### 力与脉冲
+
+```c++
+void b2Body::ApplyForce(const b2Vec2& force, const b2Vec2& point;
+
+void b2Body::ApplyTorque(float torque); //扭力
+
+void b2Body::ApplyLinearImpulse(const b2Vec2& impulse, const b2Vec2& point);
+
+void b2Body::ApplyAngularImpulse(float impulse);
+```
+
+施加力与脉冲会唤醒休眠的刚体，如果希望既有力刚体又能保持休眠，可以参考如下做法：
+```c++
+if (myBody->IsAwake() == true)
+{
+	myBody->ApplyForce(myForce, myPoint);
+}
+```
+
+### 坐标转换
+
+```c++
+b2Vec2 b2Body::GetWorldPoint(const b2Vec2& localPoint);
+
+b2Vec2 b2Body::GetWorldVector(const b2Vec2& localVector);
+
+b2Vec2 b2Body::GetLocalPoint(const b2Vec2& worldPoint);
+
+b2Vec2 b2Body::GetLocalVector(const b2Vec2& worldVector);
+```
+
+### 遍历夹具
+
+```c++
+if（b2Fixture* f = body->GetFixtureList(); f; f = f->GetNext()
+{
+	MyFixtureData* data = (MyFixtureData*)f->GetUserData();
+}
+```
+
+# 夹具
+
+一个刚体可以有零个、一个或者多个夹具，带有夹具的刚体又称为复合体（Compound Body）；
+
+## 创建与销毁
+
+```c++
+b2Body* myBody;
+b2FixtureDef fixtureDef；
+fixtureDef.shape = &myShape；
+fixtureDef.density = 1.0f；
+b2Fixture* myFixture = myBody->CreateFixture(&fixtureDef);
+
+myBody->DestroyFixture(myFixture);
+myFixture = nullptr;
+```
+
+## 密度
+
+夹具的密度参与母体质量属性的计算，密度可以是0或某个正数，建议所有的夹具使用类似的密度，以保证结构的稳定性；
+
+当设置密度时，刚体的质量属性不会调整，需要调用`ResetMassData`；
+```c++
+b2Fixture* fixture;
+fixture->SetDensity(5.0f);
+
+body->ResetMassData();
+```
+
+## 摩擦
+
+Box2D支持静态和动态摩擦，但对两者使用相同的参数；
+摩擦参数通常设置在0到1之间，但可以是任何非负值，摩擦值为0会关闭摩擦，值为1会使摩擦力变强；
+计算两个形状之间的摩擦力需要结合两个夹具的摩擦参数、使用几何平均法计算的，只要其中一方的摩擦力为0，则两者之间的摩擦力也为0；
+
+```c++
+b2Fixture* fixtureA;
+b2Fixture* fixtureB;
+float friction;
+
+friction = sqrtf(fixtureA->friction * fixtureB->friction);
+```
+
+可以使用`b2Contact::SetFriction`覆盖默认的混合摩擦（通常在`b2ContactListener`的回调中完成）；
+
+## 恢复力
+
+恢复力（Resititution）用来使物理反弹，通常被设置为0到1之间，0意味着非弹性碰撞，1意味着完全弹性碰撞；
+
+混合恢复力的计算：
+```c++
+b2Fixture* fixtureA;
+b2Fixture* fixtureB;
+
+float restitution;
+
+restitution = b2Max(fixtureA->restitution, fixtureB->restitution);
+```
+
+可以使用`b2Contact::SetRestitution`覆盖默认的混合恢复力（通常在`b2ContactListener`的回调中完成）；
+
+## 碰撞过滤
+
+某些情况下，有些夹具之间需要没有碰撞，这就需要过滤掉这些夹具，Box2D中是通过`屏蔽位`实现的；
+```c++
+b2FixtureDef playerFixtureDef, monsterFixtureDef;
+playerFixtureDef.filter.categoryBits = 0x0002;
+monsterFixtureDef.filter.categoryBits = 0x004;
+playerFixtureDef.filter.maskBits = 0x0004;
+monsterFixtureDef.filter.maskBits = 0x0002;
+
+uint16 catA = fixtureA.filter.categoryBits;
+uint16 maskA = fixtureA.filter.maskBits;
+uint16 catB = fixtureB.filter.categoryBits;
+uint16 maskB = fixtureB.filter.maskBits;
+
+if ((catA & maskB) != 0 && (catB & maskA) != 0)
+{
+	//怪物之间不碰撞，玩家之间不碰撞，怪物与玩家之间碰撞
+}
+```
+
+还可以分配`碰撞组`，具有相同组索引的夹具总是碰撞（正数）或总是不碰撞（负数）；
+```c++
+//总是碰撞
+fixture1Def.filter.groupIndex = 2;
+fixture2Def.filter.groupIndex = 2;
+
+//总是不碰撞
+fixture3Def.filter.groupIndex = -8;
+fixture4Def.filter.groupIndex = -8;
+```
+
+如果同时使用了屏蔽位和碰撞组，则==碰撞组的优先级高于屏蔽位==；
+
+此外，Box2D中还有一些默认的碰撞过滤规则：
+1. 静态体的夹具只能和动态体碰撞；
+2. 运动体的夹具只能和动态体碰撞；
+3. 同一母体上的夹具不会互相碰撞；
+4. 可以选择性地启用/禁用由关节连接的刚体上夹具之间的碰撞；
+
+可以使用`b2Fixture::GetFilterData`和`b2Fixture::SetFilterData`来修改夹具的`b2Filter`结构体，但修改过后直到下一次step才会生效；
+
+## 传感器
+
+传感器是一个能够检测到碰撞而不产生反应的装置，任何夹具都可以被标记为传感器，传感器只有在至少其中一方是动态体的时候才生效；
+
+传感器不产生接触点，有两种方法获取传感器的状态：
+```c++
+b2Contact::IsTouching
+
+b2ContactListener::BeginContact
+b2ContactListener::EndContact
+```
+
+# 关节
+
+关节使用`b2JointDef`进行定义，所有关节都连接在两个不同的刚体之间，允许将关节连接到静态体上，但不会有任何效果；
+
+关节连接的体之间默认不会碰撞，可以设置`collideConnected`以允许连接体之间的碰撞；
+
+## 创建与销毁
+
+```c++
+b2World* myWorld;
+
+b2RevoluteJointDef jointDef;
+
+jointDef.bodyA = myBodyA;
+jointDef.bodyB = myBodyB;
+
+jointDef.anchorPoint = myBodyA->GetCenterPosition();
+
+b2RevoluteJoint* joint = (b2RevoluteJoint*)myWorld->CreateJoint(&jointDef);
+
+// ... do stuff ...
+
+myWorld->DestroyJoint(joint);
+joint = nullptr;
+```
+
+## 获取数据
+
+```c++
+b2Body* b2Joint::GetBodyA();
+b2Body* b2Joint::GetBodyB();
+
+b2Vec2 b2Joint::GetAnchorA();
+b2Vec2 b2Joint::GetAnchorB();
+
+void* b2Joint::GetUserData();
+
+b2Vec2 b2Joint::GetReactionForce();
+float b2Joint::GetReactionTorque();
+```
+
+## 分类
+
+### 距离关节
+
+两个物体之间的锚点的距离是恒定的；
