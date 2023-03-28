@@ -659,4 +659,72 @@ float b2Joint::GetReactionTorque();
 
 ### 距离关节
 
-两个物体之间的锚点的距离是恒定的；
+两个物体之间的锚点的距离是恒定的，默认不发生碰撞；
+
+![distanceJoint|200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230328230834.png)
+
+
+距离关节可以做的很软，类似弹簧一样，通过调节刚度（stiffness）和阻尼（damping）实现；
+```c++
+b2DistanceJointDef jointDef;
+jointDef.Initialize(myBodyA, myBodyB, worldAnchorOnBodyA, worldAnchorOnBodyB);
+
+float frequencyHz = 4.0f;
+float dampingRatio = 0.5f;
+b2LinearStiffness(jointDef.stiffness, jointDef.damping, frequencyHz, dampingRatio, jointDef.bodyA, jointDef.bodyB);
+```
+
+### 旋转关节
+
+旋转关节迫使两个刚体共享一个共同的锚点，称为`铰链点`；
+旋转关节有一个单一的自由度，即两个刚体的相对旋转，称为`关节角度`；
+
+![revolutionJoint|200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230328230916.png)
+
+```c++
+b2RevoluteJointDef jointDef;
+jointDef.Initialize(myBodyA, myBodyB, myBodyA->GetWorldCenter());
+jointDef.lowerAngle = -0.5f * b2_pi;
+jointDef.upperAngle = 0.25f * b2_pi;
+jointDef.enableLimit = true;
+jointDef.maxMotorque = 10.0f;
+jointDef.motorSpeed = 0.0f;
+jointDef.enableMotor = true;
+```
+
+```c++
+float b2RevoluteJoint::GetJointAngle() const;
+float b2RevoluteJoint::GetJointSpeed() const;
+float b2RevoluteJoint::GetMotTorque() const;
+
+void b2RevoluteJoint::SetMotorSpeed(float speed);
+void b2RevoluteJoint::SetMaxMotorTorque(float torque);
+```
+
+### 棱形关节
+
+棱形关节允许两个刚体沿着指定的轴线进行相对平移，防止相对旋转；
+
+![prismaticJoint|200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230328231712.png)
+
+```c++
+b2PrismaticJointDef jointDef;
+b2Vec2 worldAxis(1.0f, 0.0f);
+
+jointDef.Initialize(myBodyA, myBodyB, myBodyA->GetWorldCenter(), worldAxis);
+
+jointDef.lowerTranslation = -5.0f;
+jointDef.upperTranslation = 2.5f;
+jointDef.enableLimit = true;
+jointDef.maxMotorForce = 1.0f;
+jointDef.motorSpeed = 0.0f;
+jointDef.enableMotor = true;
+```
+
+```c++
+float PrismaticJoint::GetJointTranslation() const;
+float PrismaticJoint::GetJointSpeed() const;
+float PrismaticJoint::GetMotorForce() const;
+void PrismaticJoint::SetMotorSpeed(float speed);
+void PrismaticJoint::SetMotorForce(float force);
+```
