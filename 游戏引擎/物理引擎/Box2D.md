@@ -728,3 +728,9 @@ float PrismaticJoint::GetMotorForce() const;
 void PrismaticJoint::SetMotorSpeed(float speed);
 void PrismaticJoint::SetMotorForce(float force);
 ```
+
+### 滑轮关节
+
+创建一个理想化的滑轮，滑轮将两个身体连接到地面和彼此之间，当一个身体上升时，另一个就会下降；
+滑轮绳的总长度是不变的，也可以提供一个比值，模拟一个块状物，使得一端的长度变化比另一端更快/慢；
+

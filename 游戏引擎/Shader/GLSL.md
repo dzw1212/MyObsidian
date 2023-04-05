@@ -169,6 +169,51 @@ layout(depth_<condition>) out float gl_FragDepth;
 3> **less**：深度值只能比gl_FragCoord.z更小；
 4> **unchaned**：即使要设置gl_FragDepth，也只能设为gl_FragCoord.z；
 
+## 内建函数 Build-in Function
+
+### 角度与三角函数
+
+角度：`radians`，`degrees`；
+三角函数：`sin/cos/tan`，`asin/acos/atan`，`sinh/cosh/tanh`，`asinh/acosh/atanh`等；
+
+### 指数函数
+
+`pow(x, y)`：x的y次方；
+`exp(x)/log(x)`：e的x次方/对数；
+`exp2(x)/log2(x)`：2的x次方/对数；
+`sqrt(x)/inversesqrt(x)`：开方/开方的倒数；
+
+### 通用函数
+
+`abs`，`sign`，`floor/ceil`，`mod`，`min/max`，
+`clamp(x, minVal, maxVal)`：限定范围；
+`trunc`：返回最接近 x 的整数的值，其绝对值不大于 x 的绝对值；
+`round/roundEven`：四舍五入/四舍五入到最接近的偶数值；
+`fract`：取小数部分；
+`mix(x, y, alpha)`：混合，返回x*(1-a)+y*(a)；
+`step(edge, x)`：阶梯函数，如果x < edge，返回0；否则返回1；
+`smoothstep(edge0, edge1, x)`：平滑阶梯函数，用来生成0到1之间的平滑过渡，等同于如下运算：
+```
+t = clamp ((x - edge0) / (edge1 - edge0), 0, 1);
+return t * t * (3 - 2 * t);
+```
+
+`isnan/isinf`：是否非数值/是否无穷大；
+`fma(a, b, c)`：返回a * b + c；
+
+### 几何函数
+
+`length(p)`：距离原点的距离；
+`distance(p0, p1)`：两个点之间的距离；
+`dot(vecA, vecB)/cross(vecA, vecB)`：点积/叉积；
+`normalize`：正交化；
+
+### 比较函数
+
+`lessTan/lessThanEqual`；
+`greaterThan/greaterThanEqual`；
+`equal/notEqual`；
+`any/all/not`；
 
 ## 接口块 Interface Block
 
