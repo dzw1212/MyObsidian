@@ -19,4 +19,24 @@ Mono分为`经典Mono`和`.NET Core Mono`，经典Mono只支持到`C#7`或者说
 
 ### 构建Mono运行时库
 
-下载源代码，使用`msvc/mono.sln`进行构建；
+下载源代码，使用`msvc/mono.sln`进行构建（建议配置`Debug x64`和`Release x64`）；
+*https://github.com/mono/mono*
+
+### 复制.NET库
+
+所需要的库文件都应该放置在`msvc/build/sgen/{platform}/`目录下，所需要的文件有：
+- `lib`目录下：
+	eglib.lib
+	libgcmonosgen.lib
+	libmini-sgen.lib
+	libmonoruntime-sgen.lib
+	libmono-static-gen.lib
+	libmonoutils.lib
+	mono-2.0-sgen.lib
+	MonoPosixHelper.lib
+- `bin`目录下：
+	mono-2.0-sgen.dll
+	MonoPosixHelper.dll
+
+下载并安装Mono：*https://www.mono-project.com/download/stable/*
+
