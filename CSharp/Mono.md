@@ -40,7 +40,7 @@ Mono分为`经典Mono`和`.NET Core Mono`，经典Mono只支持到`C#7`或者说
 
 下载并安装Mono：*https://www.mono-project.com/download/stable/*
 
-推荐使用`C:\Program Files\Mono\lib\mono\4.5\`，将该目录及其下所有文件复制到游戏引擎的某个目录下；
+推荐使用`C:\Program Files\Mono\lib\mono\4.5\`，将该目录及其下所有文件复制到游戏引擎的某个目录下，等待后续链接；
 
 # 嵌入引擎
 
@@ -53,7 +53,7 @@ Mono分为`经典Mono`和`.NET Core Mono`，经典Mono只支持到`C#7`或者说
 void InitMono()
 {
 	//指定mono lib库的位置
-	mono_set_assemblies_path("mono/lib");
+	mono_set_assemblies_path("mono/lib/4.5");
 }
 ```
 
@@ -190,10 +190,87 @@ static void PrintAssemblyTypes(MonoAssembly* assembly)
 		const char* nameSpace = mono_metadata_string_heap(image, cols[MONO_TYPEDEF_NAMESPACE]);
 		const char* name = mono_metadata_string_heap(image, cols[MONO_TYPEDEF_NAME]);
 
-		printf("%s.%s\n", nameSpace, name);
+		std::cout << "---row: " << i << std::endl;
+		std::cout << "---namespace: " << nameSpace << std::endl;
+		std::cout << "---name: " <<name << std::endl;
 	}
 }
 ```
 
+```c#
+using System;
 
+namespace DAZEL
+{
+	public class Main
+	{
+		public float FloatVar { get; set; }
 
+		public Main()
+		{
+			Console.WriteLine("Main constructor");
+		}
+
+		public void PrintMessage()
+		{
+			Console.WriteLine("Hello World From C#");
+		}
+
+		public void PrintCustomMessage(string msg)
+		{
+			Console.WriteLine($"C# says: {msg}");
+		}
+	}
+}
+
+//---row: 0
+//---namespace:
+//---name: <Module>
+//---row: 1
+//---namespace: DAZEL
+//---name: Main
+```
+
+打印出来的第一个类型名称是`<Module>`，这是一个由C#编译器提供的类型，所有的dll和exe都带有这个类型，一个Assembly至少带有一个Module；
+
+## 获取C#类的引用
+
+为了能够从C++代码中调用C#类的方法并访问其属性，需要先获取C#类的引用，并在C++中创建一个对应的实例；
+
+```c++
+MonoClass* GetClassInAssembly(MonoAssembly* assembly, const char* namespaceName, const char* className)
+{
+    MonoImage* image = mono_assembly_get_image(assembly);
+    MonoClass* klass = mono_class_from_name(image, namespaceName, className);
+
+    if (klass == nullptr)
+    {
+        // Log error here
+        return nullptr;
+    }
+
+    return klass;
+}
+
+// ...
+
+MonoClass* testingClass = GetClassInAssembly(appAssembly, "", "CSharpTesting");
+```
+
+## 实例化C#类
+
+```c++
+// Get a reference to the class we want to instantiate
+MonoClass* testingClass = GetClassInAssembly(appAssembly, "", "CSharpTesting");
+
+// Allocate an instance of our class
+MonoObject* classInstance = mono_object_new(s_AppDomain, testingClass);
+
+if (classInstance == nullptr)
+{
+    // Log error here and abort
+}
+
+// Call the parameterless (default) constructor
+mono_runtime_object_init(classInstance);
+```
