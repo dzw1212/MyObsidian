@@ -260,10 +260,10 @@ MonoClass* testingClass = GetClassInAssembly(appAssembly, "", "CSharpTesting");
 ## 实例化C#类
 
 ```c++
-// Get a reference to the class we want to instantiate
+// 根据类的名称获取C#类的引用
 MonoClass* testingClass = GetClassInAssembly(appAssembly, "", "CSharpTesting");
 
-// Allocate an instance of our class
+// 分配实例
 MonoObject* classInstance = mono_object_new(s_AppDomain, testingClass);
 
 if (classInstance == nullptr)
@@ -271,6 +271,371 @@ if (classInstance == nullptr)
     // Log error here and abort
 }
 
-// Call the parameterless (default) constructor
+// 尝试调用默认的类的构造函数
+// 如果找不到无参数的构造函数，则会触发assert
 mono_runtime_object_init(classInstance);
+```
+
+## 从C++中调用C#函数
+
+### 两种调用C#函数的方法
+
+1、`mono_runtime_invoke`
+相比Unmanaged Method Thunks，更慢，更安全，更灵活；
+可以用任何参数调用任何方法，mono_runtime_invoke会对传递的对象以及参数进行检查验证；
+2、`Unmanaged Method Thunks`
+相比mono_runtime_invoke，允许以更少的开销调用C#方法；
+
+如果一个C#函数每秒钟要调用多次，并且在编译时知道该方法的签名，则应该使用Unmanaged Method Thunks；否则应该使用mono_runtime_invoke；
+
+### 检索与调用
+
+```c++
+MonoClass* instanceClass = mono_object_get_class(objectInstance);
+
+// 根据函数名称来获取C#函数的引用
+//param1：类的实例
+//param2：函数名称
+//param3：函数参数的个数，若为-1，则Mono会返回找到的函数的第一个版本
+//        如果有多个版本的函数具有相同的参数个数，则需要其他方法来获取函数引用
+MonoMethod* method = mono_class_get_method_from_name(instanceClass, "PrintFloatVar", 0);
+
+if (method == nullptr)
+{
+	//未找到对应的函数
+	return;
+}
+
+//调用C#函数
+MonoObject* exception = nullptr;
+//param1：函数引用
+//param2：类对象实例
+//param3：想要传递的任何参数的数组指针
+//param4：异常变量的指针
+mono_runtime_invoke(method, objectInstance, nullptr, &exception);
+```
+
+### 传递参数
+
+```c++
+MonoClass* instanceClass = mono_object_get_class(objectInstance);
+MonoMethod* method = mono_class_get_method_from_name(instanceClass, "IncrementFloatVar", 1);
+if (!method)
+	return;
+
+
+float value = 0.5f;
+MonoObject* exception = nullptr;
+
+//方法一
+void* param = &value;
+mono_runtime_invoke(method, objectInstance, &param, &exception);
+
+//方法二
+void* params[] =
+{
+	&value
+};
+
+mono_runtime_invoke(method, objectInstance, params, &exception);
+```
+
+如果是要传递的参数是`string`，则需要首先用`mono_string_new`将参数字符串转为`MonoString`；
+
+```c++
+std::string strMsg("Go away");
+void* param = mono_string_new(s_ScriptEngineData->pAppDomain, strMsg.c_str());
+mono_runtime_invoke(method2, classInstance, &param, nullptr);
+```
+
+## 访问C#字段与属性
+[[概念#字段与属性]]
+
+样本代码：
+```C#
+using System;
+
+public class CSharpTesting
+{
+    public float MyPublicFloatVar = 5.0f;
+
+    private string m_Name = "Hello";
+    public string Name
+    {
+        get => m_Name;
+        set
+        {
+            m_Name = value;
+            MyPublicFloatVar += 5.0f;
+        }
+    }
+
+    public void PrintFloatVar()
+    {
+        Console.WriteLine("MyPublicFloatVar = {0:F}", MyPublicFloatVar);
+    }
+
+    private void IncrementFloatVar(float value)
+    {
+        MyPublicFloatVar += value;
+    }
+
+}
+```
+
+```C++
+MonoObject* testingInstance = InstantiateClass("", "CSharpTesting");
+MonoClass* testingClass = mono_object_get_class(testingInstance);
+
+// Get a reference to the public field called "MyPublicFloatVar"
+MonoClassField* floatField = mono_class_get_field_from_name(testingClass, "MyPublicFloatVar");
+
+// Get a reference to the private field called "m_Name"
+MonoClassField* nameField = mono_class_get_field_from_name(testingClass, "m_Name");
+
+// Get a reference to the public property called "Name"
+MonoProperty* nameProperty = mono_class_get_property_from_name(testingClass, "Name");
+
+// Do something
+```
+
+### 检查可访问性
+
+Mono不关心类、方法、字段或属性的可访问性，比如Mono允许用户设置一个私有字段的值，但是出于对脚本逻辑与安全性的考虑，用户应该尊重字段或属性的可访问性；
+
+```C++
+enum class Accessibility : uint8_t
+{
+	None		= 0,
+	Private		= (1 << 0),
+	Internal	= (1 << 1),
+	Protected	= (1 << 2),
+	Public		= (1 << 3),
+};
+```
+
+```C++
+// Gets the accessibility level of the given field
+static uint8_t GetFieldAccessibility(MonoClassField* field)
+{
+	uint8_t accessibility = (uint8_t)Accessibility::None;
+	uint32_t accessFlag = mono_field_get_flags(field) & MONO_FIELD_ATTR_FIELD_ACCESS_MASK;
+
+	switch (accessFlag)
+	{
+	case MONO_FIELD_ATTR_PRIVATE:
+		{
+			accessibility = (uint8_t)Accessibility::Private;
+			break;
+		}
+	case MONO_FIELD_ATTR_FAM_AND_ASSEM:
+		{
+			accessibility |= (uint8_t)Accessibility::Protected;
+			accessibility |= (uint8_t)Accessibility::Internal;
+			break;
+		}
+	case MONO_FIELD_ATTR_ASSEMBLY:
+		{
+			accessibility = (uint8_t)Accessibility::Internal;
+			break;
+		}
+	case MONO_FIELD_ATTR_FAMILY:
+		{
+			accessibility = (uint8_t)Accessibility::Protected;
+			break;
+		}
+	case MONO_FIELD_ATTR_FAM_OR_ASSEM:
+		{
+			accessibility |= (uint8_t)Accessibility::Private;
+			accessibility |= (uint8_t)Accessibility::Protected;
+			break;
+		}
+	case MONO_FIELD_ATTR_PUBLIC:
+		{
+			accessibility = (uint8_t)Accessibility::Public;
+			break;
+		}
+	}
+
+	return accessibility;
+}
+
+// Gets the accessibility level of the given property
+static uint8_t GetPropertyAccessbility(MonoProperty* property)
+{
+	uint8_t accessibility = (uint8_t)Accessibility::None;
+
+	// Get a reference to the property's getter method
+	MonoMethod* propertyGetter = mono_property_get_get_method(property);
+	if (propertyGetter != nullptr)
+	{
+		// Extract the access flags from the getters flags
+		uint32_t accessFlag = mono_method_get_flags(propertyGetter, nullptr) & MONO_METHOD_ATTR_ACCESS_MASK;
+
+		switch (accessFlag)
+		{
+		case MONO_FIELD_ATTR_PRIVATE:
+			{
+				accessibility = (uint8_t)Accessibility::Private;
+				break;
+			}
+		case MONO_FIELD_ATTR_FAM_AND_ASSEM:
+			{
+				accessibility |= (uint8_t)Accessibility::Protected;
+				accessibility |= (uint8_t)Accessibility::Internal;
+				break;
+			}
+		case MONO_FIELD_ATTR_ASSEMBLY:
+			{
+				accessibility = (uint8_t)Accessibility::Internal;
+				break;
+			}
+		case MONO_FIELD_ATTR_FAMILY:
+			{
+				accessibility = (uint8_t)Accessibility::Protected;
+				break;
+			}
+		case MONO_FIELD_ATTR_FAM_OR_ASSEM:
+			{
+				accessibility |= (uint8_t)Accessibility::Private;
+				accessibility |= (uint8_t)Accessibility::Protected;
+				break;
+			}
+		case MONO_FIELD_ATTR_PUBLIC:
+			{
+				accessibility = (uint8_t)Accessibility::Public;
+				break;
+			}
+		}
+	}
+
+	// Get a reference to the property's setter method
+	MonoMethod* propertySetter = mono_property_get_set_method(property);
+	if (propertySetter != nullptr)
+	{
+		// Extract the access flags from the setters flags
+		uint32_t accessFlag = mono_method_get_flags(propertySetter, nullptr) & MONO_METHOD_ATTR_ACCESS_MASK;
+		if (accessFlag != MONO_FIELD_ATTR_PUBLIC)
+			accessibility = (uint8_t)Accessibility::Private;
+	}
+	else
+	{
+		accessibility = (uint8_t)Accessibility::Private;
+	}
+
+	return accessibility;
+}
+```
+
+```C++
+MonoObject* testingInstance = InstantiateClass("", "CSharpTesting");
+MonoClass* testingClass = mono_object_get_class(testingInstance);
+
+// Get a reference to the public field called "MyPublicFloatVar"
+MonoClassField* floatField = mono_class_get_field_from_name(testingClass, "MyPublicFloatVar");
+uint8_t floatFieldAccessibility = GetFieldAccessibility(floatField);
+
+if (floatFieldAccessibility & (uint8_t)Accessibility::Public)
+{
+    // We can safely write a value to this
+}
+
+// Get a reference to the private field called "m_Name"
+MonoClassField* nameField = mono_class_get_field_from_name(testingClass, "m_Name");
+uint8_t nameFieldAccessibility = GetFieldAccessibility(nameField);
+
+if (nameFieldAccessibility & (uint8_t)Accessibility::Private)
+{
+    // We shouldn't write to this field
+}
+
+// Get a reference to the public property called "Name"
+MonoProperty* nameProperty = mono_class_get_property_from_name(testingClass, "Name");
+uint8_t namePropertyAccessibility = GetPropertyAccessibility(nameProperty);
+
+if (namePropertyAccessibility & (uint8_t)Accessibility::Public)
+{
+    // We can safely write a value to the field using this property
+}
+```
+
+### 设置和获取值
+
+```C++
+static bool CheckMonoError(MonoError& error)
+{
+	bool hasError = !mono_error_ok(&error);
+	if (hasError)
+	{
+		unsigned short errorCode = mono_error_get_error_code(&error);
+		const char* errorMessage = mono_error_get_message(&error);
+		std::cout << "Mono Error!" << std::endl;
+		std::cout << "Error Code: "<< errorCode << std::endl;
+		std::cout << "Error Message: " << errorMessage << std::endl;
+		mono_error_cleanup(&error);
+	}
+	return hasError;
+}
+
+static std::string MonoStringToUTF8(MonoString* monoString)
+{
+	if (monoString == nullptr || mono_string_length(monoString) == 0)
+		return "";
+
+	MonoError error;
+	char* utf8 = mono_string_to_utf8_checked(monoString, &error);
+	if (CheckMonoError(error))
+		return "";
+	std::string result(utf8);
+	mono_free(utf8);
+	return result;
+}
+```
+
+```C++
+MonoObject* testingInstance = InstantiateClass("", "CSharpTesting");
+MonoClass* testingClass = mono_object_get_class(testingInstance);
+
+MonoClassField* floatField = mono_class_get_field_from_name(testingClass, "MyPublicFloatVar");
+
+// Get the value of MyPublicFloatVar from the testingInstance object
+float value;
+//param1：类的实例
+//param2：字段
+//param3：用来存储变量的指针
+mono_field_get_value(testingInstance, floatField, &value);
+
+// Increment value by 10 and assign it back to the variable
+value += 10.0f;
+mono_field_set_value(testingInstance, floatField, &value);
+
+MonoProperty* nameProperty = mono_class_get_property_from_name(testingClass, "Name");
+
+// Get the value of Name by invoking the getter method
+// mono_property_get_value返回一个MonoObject指针
+// 如果是一个字符串对象，可以直接强转为MonoString；如果是一个值对象，则需要拆箱
+MonoString* nameValue = (MonoString*)mono_property_get_value(nameProperty, testingInstance, nullptr, nullptr);
+std::string nameStr = MonoStringToUTF8(nameValue);
+
+// Modify and assign the value back to the property by invoking the setter method
+nameStr += ", World!";
+//需要构造一个新的MonoString，不能直接修改获取到的
+nameValue = mono_string_new(s_AppDomain, nameStr.c_str());
+//不能直接传递值的指针，需要封装进一个void*的数组
+//如果是MonoObject*或MonoString*对象，则可以简单的使用void**
+mono_property_set_value(nameProperty, testingInstance, (void**)&nameValue, nullptr);
+```
+
+拆箱属性的值对象：
+```C++
+MonoProperty* floatProperty = mono_class_get_property_from_name(testingClass, "MyFloatProperty");
+
+// Get the value of Name by invoking the getter method
+MonoObject* floatValueObj = mono_property_get_value(floatProperty, testingInstance, nullptr, nullptr);
+float floatValue = *(float*)mono_object_unbox(floatValueObj);
+
+// Modify and assign the value back to the property by invoking the setter method
+floatValue += 10.0f;
+void* data[] = { &floatValue };
+mono_property_set_value(nameProperty, testingInstance, data, nullptr);
 ```
