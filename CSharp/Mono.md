@@ -233,6 +233,8 @@ namespace DAZEL
 
 打印出来的第一个类型名称是`<Module>`，这是一个由C#编译器提供的类型，所有的dll和exe都带有这个类型，一个Assembly至少带有一个Module；
 
+# 使用
+
 ## 获取C#类的引用
 
 为了能够从C++代码中调用C#类的方法并访问其属性，需要先获取C#类的引用，并在C++中创建一个对应的实例；
@@ -348,7 +350,7 @@ void* param = mono_string_new(s_ScriptEngineData->pAppDomain, strMsg.c_str());
 mono_runtime_invoke(method2, classInstance, &param, nullptr);
 ```
 
-## 访问C#字段与属性
+### 访问C#字段与属性
 [[概念#字段与属性]]
 
 样本代码：
@@ -639,3 +641,37 @@ floatValue += 10.0f;
 void* data[] = { &floatValue };
 mono_property_set_value(nameProperty, testingInstance, data, nullptr);
 ```
+
+## 从C#中调用C++函数
+
+### Platform Invoke
+
+### 内部调用
+
+C++端：
+```c++
+static void CppFunction()
+{
+	std::cout << "Call CppFunction from C++" << std::endl;
+}
+
+mono_add_internal_call("DAZEL.CppFunction", CppFunction);
+```
+
+C#端：
+```C#
+using System;
+using System.Runtime.CompilerServices;
+
+[MethodImplAttribute(MethodImplOptions.InternalCall)]
+extern static string CppFunction();
+
+public void PrintMessage()
+{
+	Console.WriteLine("Hello World From C#");
+
+	CppFunction();
+}
+```
+
+
