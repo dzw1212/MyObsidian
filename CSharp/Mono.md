@@ -655,7 +655,11 @@ static void CppFunction()
 	std::cout << "Call CppFunction from C++" << std::endl;
 }
 
-mono_add_internal_call("DAZEL.CppFunction", CppFunction);
+//after mono_domain_set
+
+//注意！！！
+//函数名称的格式为{namespaceName.className::functionName}
+mono_add_internal_call("DAZEL.Main::CppFunction", CppFunction);
 ```
 
 C#端：
@@ -663,14 +667,32 @@ C#端：
 using System;
 using System.Runtime.CompilerServices;
 
-[MethodImplAttribute(MethodImplOptions.InternalCall)]
-extern static string CppFunction();
-
-public void PrintMessage()
+namespace DAZEL
 {
-	Console.WriteLine("Hello World From C#");
+	public class Main
+	{
+		public float FloatVar { get; set; }
 
-	CppFunction();
+		public Main()
+		{
+			Console.WriteLine("Main default constructor");
+		}
+
+		public void PrintMessage()
+		{
+			Console.WriteLine("Hello World From C#");
+
+			CppFunction();
+		}
+
+		public void PrintCustomMessage(string msg)
+		{
+			Console.WriteLine($"C# says: {msg}");
+		}
+
+		[MethodImplAttribute(MethodImplOptions.InternalCall)]
+		extern static void CppFunction();
+	}
 }
 ```
 
