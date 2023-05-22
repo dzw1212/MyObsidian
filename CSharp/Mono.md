@@ -351,7 +351,7 @@ mono_runtime_invoke(method2, classInstance, &param, nullptr);
 ```
 
 ### 访问C#字段与属性
-[[概念#字段与属性]]
+[[CSharp/概念#字段与属性]]
 
 样本代码：
 ```C#

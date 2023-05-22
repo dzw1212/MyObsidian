@@ -60,10 +60,12 @@ void VulkanRenderer::initVulkan()
 
 ## 创建VK Instance
 
+[[Vulkan/概念#vk Instance|vk Instance]]
+
 ### 获取GLFW所需的Extension
 
 ```cpp
-void VulkanRenderer::getExtensions()
+void VulkanRenderer::getGLFWExtensions()
 {
     m_glfwExtensions = glfwGetRequiredInstanceExtensions(&m_glfwExtensionCount);
 
@@ -74,7 +76,7 @@ void VulkanRenderer::getExtensions()
 ### 获取Validation Layer所需的Extension（可选）
 
 ```cpp
-void VulkanRenderer::addMessageCallbackExtension()
+void VulkanRenderer::getValidationLayerMessageCallbackExtension()
 {
     m_vecChosedExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 }
@@ -83,7 +85,7 @@ void VulkanRenderer::addMessageCallbackExtension()
 ### 获取所有可用的Extension
 
 ```cpp
-bool VulkanRenderer::checkExtensions()
+bool VulkanRenderer::getAllValidExtensions()
 {
     uint32_t uiExtensionCount = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &uiExtensionCount, nullptr);
@@ -134,7 +136,7 @@ bool VulkanRenderer::checkChosedExtensionValid()
 ### 获取所有可用的Validation Layer（可选）
 
 ```cpp
-bool VulkanRenderer::checkValidationLayers()
+bool VulkanRenderer::getAllValidValidationLayers()
 {
     uint32_t uiLayerCount = 0;
     vkEnumerateInstanceLayerProperties(&uiLayerCount, nullptr);
