@@ -293,6 +293,8 @@ VkResult VulkanRenderer::CreateDebugUtilsMessengerEXT(
 
 ## 创建Window Surface
 
+[[Vulkan/概念#Window Surface|Window Surface]]
+
 ```cpp
 void VulkanRenderer::createWindowSurface()
 {
@@ -396,11 +398,11 @@ int VulkanRenderer::ratePhysicalDeviceSuitability(VkPhysicalDevice device)
 }
 ```
 
-```cpp
-
-```
-
 ## 创建逻辑设备
+
+### 获取所有队列簇
+
+
 
 ## 创建Swap Chain
 
