@@ -190,7 +190,7 @@ bool VulkanRenderer::checkChosedValidationLayerValid()
 }
 ```
 
-### 创建VkApplicationInfo
+### 设置App相关信息
 
 ```cpp
 VkApplicationInfo appInfo{};
@@ -202,7 +202,7 @@ appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
 appInfo.apiVersion = VK_API_VERSION_1_0;
 ```
 
-### 创建VkInstanceCreateInfo
+### 填充VkInstanceCreateInfo
 
 ```cpp
 VkInstanceCreateInfo createInfo{};
@@ -400,15 +400,461 @@ int VulkanRenderer::ratePhysicalDeviceSuitability(VkPhysicalDevice device)
 
 ## 创建逻辑设备
 
-### 获取所有队列簇
+### 获取Graphic和Present队列族
 
+```cpp
+struct QueueFamilyIndices
+{
+	std::optional<uint32_t> graphicFamily;
+	std::optional<uint32_t> presentFamily;
 
+	bool isComplete()
+	{
+		return graphicFamily.has_value() && presentFamily.has_value();
+	}
+};
+```
+
+```cpp
+VulkanRenderer::QueueFamilyIndices VulkanRenderer::findQueueFamilies(VkPhysicalDevice device)
+{
+    //使用二段式方法获取所用支持的Queue Family
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &m_QueueFamilyCount, nullptr);
+    if (m_QueueFamilyCount == 0)
+        throw std::runtime_error("Find Valid Queue Family Failed");
+
+    m_vecQueueFamilies.resize(m_QueueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &m_QueueFamilyCount, m_vecQueueFamilies.data());
+    
+    QueueFamilyIndices indices;
+
+    //获取Graphic Queue的Idx
+    int nIdx = 0;
+    for (const auto& queueFamily : m_vecQueueFamilies)
+    {
+        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        {
+            indices.graphicFamily = nIdx;
+            break;
+        }
+        nIdx++;
+    }
+
+    //获取Present Queue的Idx
+    nIdx = 0;
+    VkBool32 bPresentSupport = false;
+    vkGetPhysicalDeviceSurfaceSupportKHR(device, nIdx, m_Surface, &bPresentSupport);
+    if (bPresentSupport)
+        indices.presentFamily = nIdx;
+
+    //graphicFamily和presentFamily通常是同一个QueueFamily
+    return indices;
+}
+```
+
+```cpp
+QueueFamilyIndices indices = findQueueFamilies(m_PhysicalDevice);
+
+//graphicFamily和presentFamily通常是同一个QueueFamily
+//因此使用set避免不同的queueFamily的Idx相同的情况
+std::set<uint32_t> setUniqueQueueFamily = {
+	indices.graphicFamily.value(),
+	indices.presentFamily.value(),
+};
+```
+
+### 填充VkDeviceQueueCreateInfo
+
+```cpp
+float queuePriority = 1.f;
+for (const auto queueFamily : setUniqueQueueFamily)
+{
+	//创建Queue的createInfo
+	VkDeviceQueueCreateInfo queueCreateInfo{};
+	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queueCreateInfo.queueFamilyIndex = indices.graphicFamily.value();
+	queueCreateInfo.queueCount = 1;	//Queue的优先级，范围[0.f, 1.f]，控制CommandBuffer的执行顺序
+	queueCreateInfo.pQueuePriorities = &queuePriority;
+	vecQueueCreateInfo.push_back(queueCreateInfo);
+}
+```
+
+### 设置硬件相关Feature
+
+```cpp
+VkPhysicalDeviceFeatures deviceFeatures{};
+deviceFeatures.samplerAnisotropy = VK_TRUE; //启用各向异性过滤，用于纹理采样
+deviceFeatures.sampleRateShading = VK_TRUE;	//启用Sample Rate Shaing，用于MSAA抗锯齿
+```
+
+### 填充VkDeviceCreateInfo
+
+```cpp
+VkDeviceCreateInfo createInfo{};
+createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+createInfo.queueCreateInfoCount = static_cast<int>(vecQueueCreateInfo.size());
+createInfo.pQueueCreateInfos = vecQueueCreateInfo.data();
+createInfo.pEnabledFeatures = &deviceFeatures;
+createInfo.enabledExtensionCount = static_cast<int>(m_vecDeviceExtensions.size());
+createInfo.ppEnabledExtensionNames = m_vecDeviceExtensions.data();
+
+if (g_bEnableValidationLayer)
+{
+	createInfo.enabledLayerCount = static_cast<int>(m_vecChosedValidationLayers.size());
+	createInfo.ppEnabledLayerNames = m_vecChosedValidationLayers.data();
+}
+else
+	createInfo.enabledExtensionCount = 0;
+```
+
+### 创建VkDevice
+
+```cpp
+VkResult res = vkCreateDevice(m_PhysicalDevice, &createInfo, nullptr, &m_LogicalDevice);
+if (res != VK_SUCCESS)
+	throw std::runtime_error("Create Logical Device Failed");
+```
 
 ## 创建Swap Chain
 
+[[Vulkan/概念#Swap Chain|Swap Chain]]
+
+### 获取硬件支持的Swap Chain信息
+
+```cpp
+struct SwapChainSupportDetails
+{
+	VkSurfaceCapabilitiesKHR capabilities;	//SwapChain容量相关信息
+	std::vector<VkSurfaceFormatKHR> vecSurfaceFormats;	//支持哪些图像格式
+	std::vector<VkPresentModeKHR> vecPresentModes;	//支持哪些表现模式，如二缓、三缓等
+};
+```
+
+```cpp
+VulkanRenderer::SwapChainSupportDetails VulkanRenderer::querySwapChainSupport(VkPhysicalDevice device)
+{
+	SwapChainSupportDetails details;
+
+	//获取硬件支持的capability，包含Image数量上下限等信息
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_Surface, &details.capabilities);
+
+	//获取硬件支持的Surface Format列表
+	uint32_t uiFormatCount = 0;
+	vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_Surface, &uiFormatCount, nullptr);
+	if (uiFormatCount > 0)
+	{
+		details.vecSurfaceFormats.resize(uiFormatCount);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_Surface, &uiFormatCount, details.vecSurfaceFormats.data());
+	}
+
+	//获取硬件支持的Present Mode列表
+	uint32_t uiPresentModeCount = 0;
+	vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_Surface, &uiPresentModeCount, nullptr);
+	if (uiPresentModeCount > 0)
+	{
+		details.vecPresentModes.resize(uiPresentModeCount);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_Surface, &uiPresentModeCount, details.vecPresentModes.data());
+	}
+
+	return details;
+}
+```
+
+### 设置Swap Chain的格式
+
+#### 图片格式
+
+一般选择32位非线性sRGB；
+
+```cpp
+VkSurfaceFormatKHR VulkanRenderer::chooseSwapChainSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& vecAvailableFormats)
+{
+	if (vecAvailableFormats.size() == 0)
+		throw std::runtime_error("No Available Surface Format");
+
+	//找到支持sRGB格式的format
+	for (const auto& format : vecAvailableFormats)
+	{
+		if (format.format == VK_FORMAT_B8G8R8A8_SRGB
+			&& format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+		{
+			return format;
+		}
+	}
+
+	//如果找不到，索性直接返回第一个
+	return vecAvailableFormats[0];
+}
+```
+
+#### 表现模式
+
+游戏推荐MAILBOX（延迟低），电影推荐FIFO；
+
+```cpp
+VkPresentModeKHR VulkanRenderer::chooseSwapChainPresentMode(const std::vector<VkPresentModeKHR>& vecAvailableModes)
+{
+	if (vecAvailableModes.size() == 0)
+		throw std::runtime_error("No Available Present Mode");
+
+	for (const auto& mode : vecAvailableModes)
+	{
+		if (mode == VK_PRESENT_MODE_MAILBOX_KHR)
+			return mode;
+	}
+	//如果不支持MAILBOX，就使用FIFO
+	return VK_PRESENT_MODE_FIFO_KHR;
+	//return VK_PRESENT_MODE_IMMEDIATE_KHR;
+}
+```
+
+#### 图像尺寸
+
+一般为窗口的大小；
+
+```cpp
+VkExtent2D VulkanRenderer::chooseSwapChainSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+{
+	//如果已经设置过，直接返回
+	if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+		return capabilities.currentExtent;
+	else
+	{
+		int nWidth = 0;
+		int nHeight = 0;
+		glfwGetFramebufferSize(m_pWindow, &nWidth, &nHeight);
+
+		VkExtent2D actualExtent = {
+			static_cast<uint32_t>(nWidth),
+			static_cast<uint32_t>(nHeight),
+		};
+
+		actualExtent.width = std::clamp(actualExtent.width,
+			capabilities.minImageExtent.width,
+			capabilities.maxImageExtent.width);
+		actualExtent.height = std::clamp(actualExtent.height,
+			capabilities.minImageExtent.height,
+			capabilities.maxImageExtent.height);
+
+		return actualExtent;
+	}
+}
+```
+
+#### 图片数量
+
+一般为最小值+1；
+
+```cpp
+uint32_t uiImageCount = details.capabilities.minImageCount + 1;
+if (details.capabilities.maxImageCount > 0)
+{
+	uiImageCount = std::clamp(uiImageCount,
+		details.capabilities.minImageCount,
+		details.capabilities.maxImageCount);
+}
+```
+
+### 填充VkSwapchainCreateInfoKHR
+
+```cpp
+VkSwapchainCreateInfoKHR createInfo{};
+createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+createInfo.surface = m_Surface;
+createInfo.minImageCount = uiImageCount;
+createInfo.imageFormat = surfaceFormat.format;
+createInfo.imageColorSpace = surfaceFormat.colorSpace;
+createInfo.imageExtent = extent;
+createInfo.imageArrayLayers = 1;
+createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+createInfo.presentMode = presentMode;
+
+//设置graphicQueue和presentQueue
+QueueFamilyIndices indices = findQueueFamilies(m_PhysicalDevice);
+uint32_t queueFamilyIndices[] = {
+	indices.graphicFamily.value(),
+	indices.presentFamily.value()
+};
+if (indices.graphicFamily != indices.presentFamily)
+{
+	createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+	createInfo.queueFamilyIndexCount = 2;
+	createInfo.pQueueFamilyIndices = queueFamilyIndices;
+}
+else
+{
+	createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	createInfo.queueFamilyIndexCount = 0;
+	createInfo.pQueueFamilyIndices = nullptr;
+}
+
+//设置如何进行Transform
+createInfo.preTransform = details.capabilities.currentTransform; //不做任何Transform
+
+//设置是否启用Alpha通道
+createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR; //不启用Alpha通道
+
+//设置是否启用隐藏面剔除
+createInfo.clipped = VK_TRUE;
+
+//oldSwapChain用于window resize时
+createInfo.oldSwapchain = VK_NULL_HANDLE;
+```
+
+### 创建VkSwapchainKHR
+
+```cpp
+VkResult res = vkCreateSwapchainKHR(m_LogicalDevice, &createInfo, nullptr, &m_SwapChain);
+if (res != VK_SUCCESS)
+	throw std::runtime_error("Create Swap Chain Failed");
+```
+
 ## 创建Image View
 
+[[Vulkan/概念#Image View|Image View]]
+
+```cpp
+//为每个Image创建ImageView
+int nIdx = 0;
+m_vecSwapChainImageViews.resize(m_vecSwapChainImages.size());
+for (size_t i = 0; i < m_vecSwapChainImages.size(); ++i)
+{
+	m_vecSwapChainImageViews[i] = createImageView(m_vecSwapChainImages[i], m_SwapChainFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+}
+```
+
+```cpp
+VkImageView VulkanRenderer::createImageView(VkImage image, VkFormat format, 
+	VkImageAspectFlags aspectFlags, uint32_t uiMipLevel)
+{
+	VkImageViewCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	createInfo.image = image;
+	createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	createInfo.format = format;
+	createInfo.subresourceRange.aspectMask = aspectFlags;
+	createInfo.subresourceRange.baseMipLevel = 0;
+	createInfo.subresourceRange.levelCount = uiMipLevel;
+	createInfo.subresourceRange.baseArrayLayer = 0;
+	createInfo.subresourceRange.layerCount = 1;
+
+	VkImageView imageView;
+
+	VkResult res = vkCreateImageView(m_LogicalDevice, &createInfo, nullptr, &imageView);
+	if (res != VK_SUCCESS)
+		throw std::runtime_error("Create Texture Image View Failed");
+
+	return imageView;
+}
+```
+
 ## 创建Render Pass
+
+[[Vulkan/概念#Render Pass|Render Pass]]
+
+### 设置Color Attachment Descriptor 及 Reference
+
+```cpp
+//设置Color Attachment Description, Reference
+VkAttachmentDescription colorAttachment{};
+colorAttachment.format = m_SwapChainFormat;
+colorAttachment.samples = m_MSAASamples;
+colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+//如果直接显示，则为VK_IMAGE_LAYOUT_PRESENT_SRC_KHR 
+//如果使用MSAA，则不能直接显示，需要改为VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+VkAttachmentReference colorAttachmentRef{};
+colorAttachmentRef.attachment = 0; //0表示第一个attachment，即上面定义的那个
+colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+```
+
+### 设置Depth Attachment Descriptor 及 Reference
+
+```cpp
+//设置Depth Attachment Description, Reference
+VkAttachmentDescription depthAttachment{};
+depthAttachment.format = findDepthFormat();
+depthAttachment.samples = m_MSAASamples;
+depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+VkAttachmentReference depthAttachmentRef{};
+depthAttachmentRef.attachment = 1;
+depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+```
+
+### 设置Subpass
+
+```cpp
+//设置Subpass
+VkSubpassDescription subpass{};
+subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+subpass.colorAttachmentCount = 1;
+subpass.pColorAttachments = &colorAttachmentRef;
+//一个Subpass只能指定一个depthAttachment
+subpass.pDepthStencilAttachment = &depthAttachmentRef;
+//指定MSAA之后的Color Attachment
+subpass.pResolveAttachments = &colorAttachmentResolveRef;
+```
+
+### 设置Dependency
+
+```cpp
+//设置Dependency
+VkSubpassDependency dependency{};
+dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+dependency.dstSubpass = 0;
+dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+	| VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+dependency.srcAccessMask = 0;
+dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+	| VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+	| VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+```
+
+### 填充VkRenderPassCreateInfo
+
+```cpp
+std::vector<VkAttachmentDescription>  vecAttachments = {
+	colorAttachment,
+	depthAttachment,
+	colorAttachmentResolve,
+};
+
+VkRenderPassCreateInfo renderPassCreateInfo{};
+renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+renderPassCreateInfo.attachmentCount = static_cast<uint32_t>(vecAttachments.size());
+renderPassCreateInfo.pAttachments = vecAttachments.data();
+renderPassCreateInfo.subpassCount = 1;
+renderPassCreateInfo.pSubpasses = &subpass;
+renderPassCreateInfo.dependencyCount = 1;
+renderPassCreateInfo.pDependencies = &dependency;
+```
+
+### 创建VkRenderPass
+
+```cpp
+VkResult res = vkCreateRenderPass(m_LogicalDevice, &renderPassCreateInfo, nullptr, &m_RenderPass);
+if (res != VK_SUCCESS)
+	throw std::runtime_error("Create Render Pass Failed");
+```
+
+## 创建DescriptorSet Layout
+
+## 创建Graphic Pipeline
+
+## 创建Command Pool
+
 
 # 主循环
 
