@@ -849,9 +849,187 @@ if (res != VK_SUCCESS)
 	throw std::runtime_error("Create Render Pass Failed");
 ```
 
-## 创建DescriptorSet Layout
+## 创建Descriptor Set Layout
+
+[[Vulkan/概念#Descriptor|Descriptor]]
+
+### 绑定UBO
+
+```cpp
+//UniformBufferObject Binding
+VkDescriptorSetLayoutBinding uboLayoutBinding{};
+uboLayoutBinding.binding = 0; //对应Vertex Shader中的layout(binding=0)
+uboLayoutBinding.descriptorCount = 1;
+uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;	//类型为Uniform Buffer
+uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT; //只需要在vertex stage生效
+uboLayoutBinding.pImmutableSamplers = nullptr;
+```
+
+### 绑定图片采样器
+
+```cpp
+//CombinedImageSampler Binding
+VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+samplerLayoutBinding.binding = 1;
+samplerLayoutBinding.descriptorCount = 1;
+samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT; //只用于fragment stage
+samplerLayoutBinding.pImmutableSamplers = nullptr;
+```
+
+### 填充VkDescriptorSetLayoutCreateInfo
+
+```cpp
+std::vector<VkDescriptorSetLayoutBinding> vecDescriptorLayoutBinding = {
+	uboLayoutBinding,
+	samplerLayoutBinding,
+};
+
+VkDescriptorSetLayoutCreateInfo createInfo{};
+createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+createInfo.bindingCount = static_cast<uint32_t>(vecDescriptorLayoutBinding.size());
+createInfo.pBindings = vecDescriptorLayoutBinding.data();
+```
+
+### 创建VkDescriptorSetLayout
+
+```cpp
+VkResult res = vkCreateDescriptorSetLayout(m_LogicalDevice, &createInfo, nullptr, &m_DescriptorSetLayout);
+if (res != VK_SUCCESS)
+	throw std::runtime_error("Create Descriptor Set Layout Failed");
+```
+
 
 ## 创建Graphic Pipeline
+
+### 可编程管线部分
+
+#### Vertex与Fragment
+
+[[Vulkan/概念#Shader Module|Shader Module]]
+
+```cpp
+/*******************************可编程管线部分*********************************/
+auto vertShaderCode = readFile("shader/vert.spv");
+auto fragShaderCode = readFile("shader/frag.spv");
+
+VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
+VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+
+VkPipelineShaderStageCreateInfo vertShaderStageCreateInfo{};
+vertShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+vertShaderStageCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+vertShaderStageCreateInfo.module = vertShaderModule; //Bytecode
+vertShaderStageCreateInfo.pName = "main"; //要invoke的函数
+
+VkPipelineShaderStageCreateInfo fragShaderStageCreateInfo{};
+fragShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+fragShaderStageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+fragShaderStageCreateInfo.module = fragShaderModule; //Bytecode
+fragShaderStageCreateInfo.pName = "main"; //要invoke的函数
+
+VkPipelineShaderStageCreateInfo shaderStageCreateInfos[] = {
+	vertShaderStageCreateInfo,
+	fragShaderStageCreateInfo,
+};
+```
+
+### 固定管线部分
+
+#### 设置Dynamic State
+
+[[Vulkan/概念#Dynamic State|Dynamic State]]
+
+```cpp
+//设置Dynamic State
+//一般会将Viewport和Scissor设为dynamic，以方便随时修改
+bool bViewportAndScissorIsDynamic = false;
+std::vector<VkDynamicState> vecDynamicStates = {
+	VK_DYNAMIC_STATE_VIEWPORT,
+	VK_DYNAMIC_STATE_SCISSOR,
+};
+
+VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{};
+dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+dynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(vecDynamicStates.size());
+dynamicStateCreateInfo.pDynamicStates = vecDynamicStates.data();
+bViewportAndScissorIsDynamic = true;
+```
+
+#### 关联Vertex数据与VertexShaderModule
+
+[[Vulkan/概念#Vertex Input State|Vertex Input State]]
+[[Vulkan/概念#Vertex Input Binding Description|Vertex Input Binding Description]]
+[[Vulkan/概念#Vertex Input Attribute Description|Vertex Input Attribute Description]]
+
+```cpp
+//将Vertex数据与VertexShaderModule关联
+auto bindingDescription = Vertex3D::getBindingDescription();
+auto attributeDescriptions = Vertex3D::getAttributeDescriptions();
+VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo{};
+vertexInputCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+vertexInputCreateInfo.vertexBindingDescriptionCount = 1;
+vertexInputCreateInfo.pVertexBindingDescriptions = &bindingDescription;
+vertexInputCreateInfo.vertexAttributeDescriptionCount = static_cast<int>(attributeDescriptions.size());
+vertexInputCreateInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+```
+
+```cpp
+//per-vertex的数据会打包在一个array中，只需要一个binding即可
+static VkVertexInputBindingDescription getBindingDescription()
+{
+	VkVertexInputBindingDescription bindingDescription{};
+	bindingDescription.binding = 0; //在binding array中的Idx
+	bindingDescription.stride = sizeof(Vertex3D);	//所占字节数
+	bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX; //传输速率，分为vertex或instance
+
+	return bindingDescription;
+}
+```
+
+```cpp
+//pos，color和texcoord，需要三个attributeDescription
+static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions()
+{
+	std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
+	attributeDescriptions[0].binding = 0;
+	attributeDescriptions[0].location = 0;
+	attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+	attributeDescriptions[0].offset = offsetof(Vertex3D, pos);
+
+	attributeDescriptions[1].binding = 0;
+	attributeDescriptions[1].location = 1;
+	attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+	attributeDescriptions[1].offset = offsetof(Vertex3D, color);
+
+	attributeDescriptions[2].binding = 0;
+	attributeDescriptions[2].location = 2;
+	attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+	attributeDescriptions[2].offset = offsetof(Vertex3D, texCoord);
+
+	return attributeDescriptions;
+}
+```
+
+#### 设置Input Assembly
+
+[[Vulkan/概念#Input Assembly State|Input Assembly State]]
+
+```cpp
+//Input Assembly描述要绘制的几何形体，是否启用primitive restart
+VkPipelineInputAssemblyStateCreateInfo inputAssemblyCreateInfo{};
+inputAssemblyCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+inputAssemblyCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+inputAssemblyCreateInfo.primitiveRestartEnable = VK_FALSE;
+```
+
+
+#### 设置Viewport State
+
+
+
+
+
 
 ## 创建Command Pool
 
