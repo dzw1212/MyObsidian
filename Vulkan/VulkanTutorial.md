@@ -934,6 +934,12 @@ VkPipelineShaderStageCreateInfo shaderStageCreateInfos[] = {
 };
 ```
 
+```cpp
+//pipeline创建之后记得删除shaderModule
+vkDestroyShaderModule(m_LogicalDevice, vertShaderModule, nullptr);
+vkDestroyShaderModule(m_LogicalDevice, fragShaderModule, nullptr);
+```
+
 ### 固定管线部分
 
 #### 设置Dynamic State
@@ -1011,7 +1017,7 @@ static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions
 }
 ```
 
-#### 设置Input Assembly
+#### 设置图元
 
 [[Vulkan/概念#Input Assembly State|Input Assembly State]]
 
@@ -1023,15 +1029,298 @@ inputAssemblyCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 inputAssemblyCreateInfo.primitiveRestartEnable = VK_FALSE;
 ```
 
+#### 设置视口与裁剪区域
 
-#### 设置Viewport State
+[[Vulkan/概念#Viewport State|Viewport State]]
+
+```cpp
+//设置Viewport，范围为[0,0]到[width,height]
+VkViewport viewport{};
+viewport.x = 0.f;
+viewport.y = 0.f;
+viewport.width = static_cast<float>(m_SwapChainExtent.width);
+viewport.height = static_cast<float>(m_SwapChainExtent.height);
+viewport.minDepth = 0.f;
+viewport.maxDepth = 1.f;
+```
+
+```cpp
+//设置裁剪区域Scissor Rectangle
+VkRect2D scissor{};
+scissor.offset = { 0,0 };
+VkExtent2D ScissorExtent;
+ScissorExtent.width = m_SwapChainExtent.width;
+ScissorExtent.height = m_SwapChainExtent.height;
+scissor.extent = ScissorExtent;
+```
+
+```cpp
+//设置Viewport与Scissor的数量
+VkPipelineViewportStateCreateInfo viewportStateCreateInfo{};
+viewportStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+viewportStateCreateInfo.viewportCount = 1;
+viewportStateCreateInfo.scissorCount = 1;
+//如果没有把Viewport和Scissor设为dynamic state，则需要在此处指定
+//使用这种设置方法，设置的Pipeline是不可变的
+if (!bViewportAndScissorIsDynamic)
+{
+	viewportStateCreateInfo.pViewports = &viewport;
+	viewportStateCreateInfo.pScissors = &scissor;
+}
+```
+
+#### 设置光栅化
+
+[[Vulkan/概念#Rasterization State|Rasterization State]]
+
+```cpp
+//设置光栅化
+VkPipelineRasterizationStateCreateInfo rasterizationStateCreateInfo{};
+rasterizationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+rasterizationStateCreateInfo.depthClampEnable = VK_FALSE;	//开启后，超过远近平面的部分会被截断在远近平面上，而不是丢弃
+rasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;	//开启后，禁止所有图元经过光栅化器
+rasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;	//图元模式，可以是FILL、LINE、POINT
+rasterizationStateCreateInfo.lineWidth = 1.f;	//指定光栅化后的线段宽度
+rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;	//剔除模式，可以是NONE、FRONT、BACK、FRONT_AND_BACK
+rasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE; //顶点序，可以是顺时针cw或逆时针ccw
+rasterizationStateCreateInfo.depthBiasEnable = VK_FALSE; //深度偏移，一般用于Shaodw Map中避免阴影痤疮
+rasterizationStateCreateInfo.depthBiasConstantFactor = 0.f;
+rasterizationStateCreateInfo.depthBiasClamp = 0.f;
+rasterizationStateCreateInfo.depthBiasSlopeFactor = 0.f;
+```
+
+#### 设置多重采样
+
+[[Vulkan/概念#Multisample State|Multisample State]]
+
+```cpp
+//设置多重采样，抗锯齿
+VkPipelineMultisampleStateCreateInfo multisamplingStateCreateInfo{};
+multisamplingStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+multisamplingStateCreateInfo.sampleShadingEnable = VK_TRUE;
+multisamplingStateCreateInfo.minSampleShading = 0.8f;
+multisamplingStateCreateInfo.rasterizationSamples = m_MSAASamples;
+multisamplingStateCreateInfo.minSampleShading = 1.f;
+multisamplingStateCreateInfo.pSampleMask = nullptr;
+multisamplingStateCreateInfo.alphaToCoverageEnable = VK_FALSE;
+multisamplingStateCreateInfo.alphaToOneEnable = VK_FALSE;
+```
 
 
+#### 设置深度与模板测试
+
+[[Vulkan/概念#Depth Stencil State|Depth Stencil State]]
+
+```cpp
+//设置Depth和Stencil Testing
+VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo{};
+depthStencilStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+depthStencilStateCreateInfo.depthTestEnable = VK_TRUE;
+depthStencilStateCreateInfo.depthWriteEnable = VK_TRUE;
+depthStencilStateCreateInfo.depthCompareOp = VK_COMPARE_OP_LESS;
+depthStencilStateCreateInfo.depthBoundsTestEnable = VK_FALSE;
+depthStencilStateCreateInfo.minDepthBounds = 0.f;
+depthStencilStateCreateInfo.maxDepthBounds = 1.f;
+depthStencilStateCreateInfo.stencilTestEnable = VK_FALSE;
+depthStencilStateCreateInfo.front = {};
+depthStencilStateCreateInfo.back = {};
+```
 
 
+#### 设置颜色混合
+
+[[Vulkan/概念#Color Blend State|Color Blend State]]
+
+```cpp
+//设置颜色混合
+VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+colorBlendAttachment.colorWriteMask =
+	VK_COLOR_COMPONENT_R_BIT
+	| VK_COLOR_COMPONENT_G_BIT
+	| VK_COLOR_COMPONENT_B_BIT
+	| VK_COLOR_COMPONENT_A_BIT;
+colorBlendAttachment.blendEnable = VK_FALSE;
+colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+
+VkPipelineColorBlendStateCreateInfo colorBlendStateCreateInfo{};
+colorBlendStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+colorBlendStateCreateInfo.logicOpEnable = VK_FALSE;
+colorBlendStateCreateInfo.logicOp = VK_LOGIC_OP_COPY;
+colorBlendStateCreateInfo.attachmentCount = 1;
+colorBlendStateCreateInfo.pAttachments = &colorBlendAttachment;
+colorBlendStateCreateInfo.blendConstants[0] = 0.f;
+colorBlendStateCreateInfo.blendConstants[1] = 0.f;
+colorBlendStateCreateInfo.blendConstants[2] = 0.f;
+colorBlendStateCreateInfo.blendConstants[3] = 0.f;
+```
+
+
+#### 设置管线布局
+
+[[Vulkan/概念#Pipeline Layout|Pipeline Layout]]
+
+```cpp
+//设置Pipeline Layout
+VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
+pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+pipelineLayoutCreateInfo.setLayoutCount = 1;
+pipelineLayoutCreateInfo.pSetLayouts = &m_DescriptorSetLayout;
+pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
+pipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
+
+VkResult res = vkCreatePipelineLayout(m_LogicalDevice, &pipelineLayoutCreateInfo, nullptr, &m_PipelineLayout);
+if (res != VK_SUCCESS)
+	throw std::runtime_error("Create Pipeline Layout Failed");
+```
+
+### 填充VkGraphicsPipelineCreateInfo
+
+```cpp
+/*******************************创建管线*********************************/
+VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
+pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+pipelineCreateInfo.stageCount = 2;
+pipelineCreateInfo.pStages = shaderStageCreateInfos;
+pipelineCreateInfo.pVertexInputState = &vertexInputCreateInfo;
+pipelineCreateInfo.pInputAssemblyState = &inputAssemblyCreateInfo;
+pipelineCreateInfo.pViewportState = &viewportStateCreateInfo;
+pipelineCreateInfo.pRasterizationState = &rasterizationStateCreateInfo;
+pipelineCreateInfo.pMultisampleState = &multisamplingStateCreateInfo;
+pipelineCreateInfo.pDepthStencilState = &depthStencilStateCreateInfo;
+pipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
+//pipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
+pipelineCreateInfo.layout = m_PipelineLayout;
+pipelineCreateInfo.renderPass = m_RenderPass;
+pipelineCreateInfo.subpass = 0;
+pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
+pipelineCreateInfo.basePipelineIndex = -1;
+```
+
+### 创建vkPipeline
+
+```cpp
+res = vkCreateGraphicsPipelines(m_LogicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &m_Pipeline);
+if (res != VK_SUCCESS)
+	throw std::runtime_error("Create Graphics Pipeline Failed");
+```
 
 
 ## 创建Command Pool
+
+[[Vulkan/概念#Command Pool|Command Pool]]
+
+```cpp
+void VulkanRenderer::createCommandPool()
+{
+	QueueFamilyIndices indices = findQueueFamilies(m_PhysicalDevice);
+
+	VkCommandPoolCreateInfo commandPoolCreateInfo{};
+	commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	commandPoolCreateInfo.queueFamilyIndex = indices.graphicFamily.value();
+
+	VkResult res = vkCreateCommandPool(m_LogicalDevice, &commandPoolCreateInfo, nullptr, &m_CommandPool);
+	if (res != VK_SUCCESS)
+		throw std::runtime_error("Create Command Pool Failed");
+
+	//创建用于分配单次提交CommandBuffer的Pool
+	commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+
+	res = vkCreateCommandPool(m_LogicalDevice, &commandPoolCreateInfo, nullptr, &m_TransferCommandPool);
+	if (res != VK_SUCCESS)
+		throw std::runtime_error("Create Transfer Command Pool Failed");
+}
+```
+
+## 创建Frame Buffer
+
+### 创建Depth Image View
+
+```cpp
+void VulkanRenderer::createFrameBuffers()
+{
+	//为每个ImageView创建FrameBuffer
+	m_vecSwapChainFrameBuffers.resize(m_vecSwapChainImageViews.size());
+	for (size_t i = 0; i < m_vecSwapChainImageViews.size(); ++i)
+	{
+		std::vector<VkImageView> vecImageViewAttachments = { 
+			m_MSAAColorImageView,
+			m_DepthImageView,
+			m_vecSwapChainImageViews[i],
+		};
+
+		VkFramebufferCreateInfo frameBufferCreateInfo{};
+		frameBufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		frameBufferCreateInfo.renderPass = m_RenderPass;
+		frameBufferCreateInfo.attachmentCount = static_cast<uint32_t>(vecImageViewAttachments.size());
+		frameBufferCreateInfo.pAttachments = vecImageViewAttachments.data();
+		frameBufferCreateInfo.width = m_SwapChainExtent.width;
+		frameBufferCreateInfo.height = m_SwapChainExtent.height;
+		frameBufferCreateInfo.layers = 1;
+
+		if (vkCreateFramebuffer(m_LogicalDevice, &frameBufferCreateInfo, nullptr, &m_vecSwapChainFrameBuffers[i]) != VK_SUCCESS)
+			throw std::runtime_error("Create Frame Buffer Failed");
+	}
+}
+```
+
+## 创建Texture Image
+
+
+## 创建Texture Image View
+
+## 创建Texture Sampler
+
+## 载入模型
+
+## 创建Vertex Buffer
+
+```cpp
+void VulkanRenderer::createVertexBuffer()
+{
+	if (m_Vertices.size() == 0)
+		throw std::runtime_error("No Vertex Data");
+
+	VkDeviceSize verticesSize = sizeof(m_Vertices[0]) * m_Vertices.size();
+
+	//创建stageBufferMemory作为transfer的src
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+	createBuffer(verticesSize, 
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,	//用途是作为transfer的src
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, //具有CPU可见的显存类型
+		stagingBuffer, stagingBufferMemory);
+
+	//把Vertex数据传输到stageBufferMemory
+	void* vertexData;
+	vkMapMemory(m_LogicalDevice, stagingBufferMemory, 0, verticesSize, 0, &vertexData);
+	memcpy(vertexData, m_Vertices.data(), static_cast<size_t>(verticesSize));
+	vkUnmapMemory(m_LogicalDevice, stagingBufferMemory);
+
+	//创建device local的vertexBufferMemory作为transfer的dst
+	createBuffer(verticesSize, 
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, //用途是作为transfer的dst、以及vertexBuffer
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,	//具有性能最佳的DeviceLocal显存类型
+		m_VertexBuffer, m_VertexBufferMemory);
+
+	copyBuffer(stagingBuffer, m_VertexBuffer, verticesSize);
+
+	//清理stage buffer及其memory
+	vkDestroyBuffer(m_LogicalDevice, stagingBuffer, nullptr);
+	vkFreeMemory(m_LogicalDevice, stagingBufferMemory, nullptr);
+}
+```
+
+
+## 创建Index Buffer
+
+## 创建Uniform Buffer
+
 
 
 # 主循环
