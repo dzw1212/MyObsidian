@@ -851,9 +851,19 @@ if (res != VK_SUCCESS)
 
 ## 创建Descriptor Set Layout
 
-[[Vulkan/概念#Descriptor|Descriptor]]
+[[Vulkan/概念#Descriptor Set Layout|Descriptor Set Layout]]
 
 ### 绑定UBO
+
+对应Vertex Shader中的UBO对象；
+```glsl
+layout (binding = 0) uniform UniformBufferObject
+{
+	mat4 model;
+	mat4 view;
+	mat4 proj;
+} ubo;
+```
 
 ```cpp
 //UniformBufferObject Binding
@@ -866,6 +876,11 @@ uboLayoutBinding.pImmutableSamplers = nullptr;
 ```
 
 ### 绑定图片采样器
+
+对应Vertex Shader中的Texture Sampler对象；
+```glsl
+layout (binding = 1) uniform sampler2D texSampler;
+```
 
 ```cpp
 //CombinedImageSampler Binding
@@ -907,6 +922,52 @@ if (res != VK_SUCCESS)
 #### Vertex与Fragment
 
 [[Vulkan/概念#Shader Module|Shader Module]]
+
+```glsl
+//vertex shader
+#version 450
+
+layout (location = 0) in vec3 inPosition;
+layout (location = 1) in vec3 inColor;
+layout (location = 2) in vec2 inTexCoord;
+
+layout (location = 0) out vec3 fragColor;
+layout (location = 1) out vec2 fragTexCoord;
+
+layout (binding = 0) uniform UniformBufferObject
+{
+	mat4 model;
+	mat4 view;
+	mat4 proj;
+} ubo;
+
+layout (binding = 1) uniform sampler2D texSampler;
+
+void main() 
+{
+    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);
+    fragColor = inColor;
+	fragTexCoord = inTexCoord;
+}
+```
+
+```glsl
+//fragment shader
+#version 450
+
+layout(location = 0) in vec3 fragColor;
+layout(location = 1) in vec2 fragTexCoord;
+
+layout(location = 0) out vec4 outColor;
+
+layout(binding = 1) uniform sampler2D texSampler;
+
+
+void main() 
+{
+    outColor = texture(texSampler, fragTexCoord);
+}
+```
 
 ```cpp
 /*******************************可编程管线部分*********************************/
@@ -1272,13 +1333,147 @@ void VulkanRenderer::createFrameBuffers()
 ## 创建Texture Image
 
 
+```cpp
+void VulkanRenderer::createTextureImage()
+{
+	int nTexWidth = 0;
+	int nTexHeight = 0;
+	int nTexChannel = 0;
+	stbi_uc* pixels = stbi_load(m_strTexturePath.c_str(), &nTexWidth, &nTexHeight, &nTexChannel, STBI_rgb_alpha);
+	if (!pixels)
+		throw std::runtime_error("Load Texture Failed");
+
+	m_uiMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(nTexWidth, nTexHeight)))) + 1;
+
+	std::cout << nTexWidth << "|" << nTexHeight << "|" << nTexChannel << std::endl;
+	std::cout << "Mip Level:" << m_uiMipLevels << std::endl;
+
+	VkDeviceSize imageSize = (uint64_t)nTexWidth * (uint64_t)nTexHeight * 4;
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+
+	createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		stagingBuffer, stagingBufferMemory);
+
+	void* imageData;
+	vkMapMemory(m_LogicalDevice, stagingBufferMemory, 0, imageSize, 0, &imageData);
+	memcpy(imageData, pixels, static_cast<size_t>(imageSize));
+	vkUnmapMemory(m_LogicalDevice, stagingBufferMemory);
+
+	stbi_image_free(pixels);
+
+	createImage(nTexWidth, nTexHeight, m_uiMipLevels, 
+		VK_SAMPLE_COUNT_1_BIT, 
+		VK_FORMAT_R8G8B8A8_SRGB, 
+		VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+		m_TextureImage, m_TextureImageMemory);
+
+	//copy之前，将layout从初始的undefined转为transfer dst
+	transitionImageLayout(m_TextureImage, 
+		VK_FORMAT_R8G8B8A8_SRGB,				//image format
+		m_uiMipLevels,							//mipmap level
+		VK_IMAGE_LAYOUT_UNDEFINED,				//src usage
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);	//dst usage
+
+	copyBufferToImage(stagingBuffer, m_TextureImage,
+		static_cast<uint32_t>(nTexWidth), static_cast<uint32_t>(nTexHeight));
+
+	//copy之后，将layout从transfer dst转为shader readonly
+	//如果使用mipmap，在generateMipmaps中将layout转为shader readonly
+	if (m_uiMipLevels == 1)
+	{
+		transitionImageLayout(m_TextureImage, VK_FORMAT_R8G8B8A8_SRGB, m_uiMipLevels,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	}
+	
+
+	generateMipmaps(m_TextureImage, VK_FORMAT_R8G8B8A8_SRGB, nTexWidth, nTexHeight, m_uiMipLevels);
+
+	vkDestroyBuffer(m_LogicalDevice, stagingBuffer, nullptr);
+	vkFreeMemory(m_LogicalDevice, stagingBufferMemory, nullptr);
+}
+```
+
+
 ## 创建Texture Image View
+
+```cpp
+void VulkanRenderer::createTextureImageView()
+{
+	m_TextureImageView = createImageView(
+		m_TextureImage, 
+		VK_FORMAT_R8G8B8A8_SRGB,	//格式为sRGB
+		VK_IMAGE_ASPECT_COLOR_BIT,	//aspectFlags为COLOR_BIT
+		m_uiMipLevels
+	);
+}
+```
 
 ## 创建Texture Sampler
 
+[[Vulkan/概念#Texture Sampler|Texture Sampler]]
+
+```cpp
+void VulkanRenderer::createTextureSampler()
+{
+	VkSamplerCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	//设置过采样与欠采样时的采样方法
+	//可以是nearest，linear，cubic等
+	createInfo.magFilter = VK_FILTER_LINEAR;
+	createInfo.minFilter = VK_FILTER_LINEAR;
+
+	//设置纹理采样超出边界时的寻址模式
+	//可以是repeat，mirror，clamp to edge，clamp to border等
+	createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+	//设置是否开启各向异性过滤
+	//你的硬件不一定支持Anisotropy，需要确认硬件支持该preperty
+	createInfo.anisotropyEnable = VK_TRUE;
+	VkPhysicalDeviceProperties properties{};
+	vkGetPhysicalDeviceProperties(m_PhysicalDevice, &properties);
+	createInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+
+	//设置寻址模式为clamp to border时的填充颜色
+	createInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+
+	//如果为true，则坐标为[0, texWidth), [0, texHeight)
+	//如果为false，则坐标为传统的[0, 1), [0, 1)
+	createInfo.unnormalizedCoordinates = VK_FALSE;
+
+	//设置是否开启比较与对比较结果的操作
+	//通常用于百分比邻近滤波中（Shadow Map）
+	createInfo.compareEnable = VK_FALSE;
+	createInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+
+	//设置mipmap相关参数
+	createInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	createInfo.mipLodBias = 0.f;
+	createInfo.minLod = 0.f;
+	if (g_bEnableMipmap)
+		createInfo.maxLod = static_cast<float>(m_uiMipLevels);
+	else
+		createInfo.maxLod = 0.f;
+
+	VkResult res = vkCreateSampler(m_LogicalDevice, &createInfo, nullptr, &m_TextureSampler);
+	if (res != VK_SUCCESS)
+		throw std::runtime_error("Create Texture Sampler Failed");
+}
+```
+
 ## 载入模型
 
+
+
 ## 创建Vertex Buffer
+
+借助`Stage Buffer`将数据传输给DEVICE_LOCAL类型的内存；
 
 ```cpp
 void VulkanRenderer::createVertexBuffer()
@@ -1319,7 +1514,215 @@ void VulkanRenderer::createVertexBuffer()
 
 ## 创建Index Buffer
 
+```cpp
+void VulkanRenderer::createIndexBuffer()
+{
+	VkDeviceSize indicesSize = sizeof(m_Indices[0]) * m_Indices.size();
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+	createBuffer(indicesSize, 
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+		stagingBuffer, stagingBufferMemory);
+
+	void* indicesData;
+	vkMapMemory(m_LogicalDevice, stagingBufferMemory, 0, indicesSize, 0, &indicesData);
+	memcpy(indicesData, m_Indices.data(), static_cast<size_t>(indicesSize));
+	vkUnmapMemory(m_LogicalDevice, stagingBufferMemory);
+
+	createBuffer(indicesSize, 
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		m_IndexBuffer, m_IndexBufferMemory);
+
+	copyBuffer(stagingBuffer, m_IndexBuffer, indicesSize);
+
+	vkDestroyBuffer(m_LogicalDevice, stagingBuffer, nullptr);
+	vkFreeMemory(m_LogicalDevice, stagingBufferMemory, nullptr);
+}
+```
+
 ## 创建Uniform Buffer
+
+不需要传递给DEVICE_LOCAL类型的内存（?）；
+
+```cpp
+void VulkanRenderer::createUniformBuffers()
+{
+	VkDeviceSize uniformBufferSize = sizeof(UniformBufferObject);
+
+	m_vecUniformBuffers.resize(m_vecSwapChainImages.size());
+	m_vecUniformBufferMemories.resize(m_vecSwapChainImages.size());
+
+	//为并行渲染的每一帧图像创建独立的Uniform Buffer
+	for (size_t i = 0; i < m_vecSwapChainImages.size(); ++i)
+	{
+		createBuffer(uniformBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			m_vecUniformBuffers[i], m_vecUniformBufferMemories[i]);
+	}
+}
+```
+
+
+## 创建Descriptor Pool
+
+[[Vulkan/概念#Descriptor Pool|Descriptor Pool]]
+
+```cpp
+void VulkanRenderer::createDescriptorPool()
+{
+	//ubo
+	VkDescriptorPoolSize uboPoolSize{};
+	uboPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	uboPoolSize.descriptorCount = static_cast<uint32_t>(m_vecSwapChainImages.size());
+
+	//sampler
+	VkDescriptorPoolSize samplerPoolSize{};
+	samplerPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	samplerPoolSize.descriptorCount = static_cast<uint32_t>(m_vecSwapChainImages.size());
+
+	std::vector<VkDescriptorPoolSize> vecPoolSize = {
+		uboPoolSize,
+		samplerPoolSize,
+	};
+
+	VkDescriptorPoolCreateInfo poolCreateInfo{};
+	poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolCreateInfo.poolSizeCount = static_cast<uint32_t>(vecPoolSize.size());
+	poolCreateInfo.pPoolSizes = vecPoolSize.data();
+	poolCreateInfo.maxSets = static_cast<uint32_t>(m_vecSwapChainImages.size());
+
+	VkResult res = vkCreateDescriptorPool(m_LogicalDevice, &poolCreateInfo, nullptr, &m_DescriptorPool);
+	if (res != VK_SUCCESS)
+		throw std::runtime_error("Create Descriptor Pool Failed");
+}
+```
+
+
+## 创建Descriptor Set
+
+[[Vulkan/概念#Descriptor Set|Descriptor Set]]
+
+简单来说，`Descriptor Set Layout`相当于解释了着色器中的布局，`Descriptor Set`实际将Layout与`Swap Chain Image`联系在一起，`Descriptor Pool`则是用来生成`Descriptor Set`；
+
+```cpp
+void VulkanRenderer::createDescriptorSets()
+{
+	std::vector<VkDescriptorSetLayout> layouts(m_vecSwapChainImages.size(), m_DescriptorSetLayout);
+	
+	VkDescriptorSetAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorSetCount = static_cast<uint32_t>(m_vecSwapChainImages.size());
+	allocInfo.descriptorPool = m_DescriptorPool;
+	allocInfo.pSetLayouts = layouts.data();
+
+	m_vecDescriptorSets.resize(m_vecSwapChainImages.size());
+	VkResult res = vkAllocateDescriptorSets(m_LogicalDevice, &allocInfo, m_vecDescriptorSets.data());
+	if (res != VK_SUCCESS)
+		throw std::runtime_error("Allocate Descriptor Sets Failed");
+
+	for (size_t i = 0; i < m_vecSwapChainImages.size(); ++i)
+	{
+		//ubo
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = m_vecUniformBuffers[i];
+		bufferInfo.offset = 0;
+		bufferInfo.range = sizeof(UniformBufferObject);
+
+		VkWriteDescriptorSet uboWrite{};
+		uboWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		uboWrite.dstSet = m_vecDescriptorSets[i];
+		uboWrite.dstBinding = 0;
+		uboWrite.dstArrayElement = 0;
+		uboWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		uboWrite.descriptorCount = 1;
+		uboWrite.pBufferInfo = &bufferInfo;
+
+		//sampler
+		VkDescriptorImageInfo imageInfo{};
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.imageView = m_TextureImageView;
+		imageInfo.sampler = m_TextureSampler;
+
+		VkWriteDescriptorSet samplerWrite{};
+		samplerWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		samplerWrite.dstSet = m_vecDescriptorSets[i];
+		samplerWrite.dstBinding = 1;
+		samplerWrite.dstArrayElement = 0;
+		samplerWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		samplerWrite.descriptorCount = 1;
+		samplerWrite.pImageInfo = &imageInfo;
+
+		std::vector<VkWriteDescriptorSet> vecDescriptorWrite = {
+			uboWrite,
+			samplerWrite,
+		};
+
+		vkUpdateDescriptorSets(m_LogicalDevice, static_cast<uint32_t>(vecDescriptorWrite.size()), vecDescriptorWrite.data(), 0, nullptr);
+	}
+}
+```
+
+
+## 创建Command Buffer
+
+[[Vulkan/概念#Command Buffer|Command Buffer]]
+
+```cpp
+void VulkanRenderer::createCommandBuffers()
+{
+	m_vecCommandBuffers.resize(m_vecSwapChainImages.size());
+
+	VkCommandBufferAllocateInfo commandBufferAllocator{};
+	commandBufferAllocator.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	commandBufferAllocator.commandPool = m_CommandPool;
+	commandBufferAllocator.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	commandBufferAllocator.commandBufferCount = static_cast<int>(m_vecCommandBuffers.size());
+
+	VkResult res = vkAllocateCommandBuffers(m_LogicalDevice, &commandBufferAllocator, m_vecCommandBuffers.data());
+	if (res != VK_SUCCESS)
+		throw std::runtime_error("Create Command Buffer Failed");
+}
+```
+
+
+## 创建同步对象
+
+[[Vulkan/概念#Sync Object|Sync Object]]
+
+```cpp
+void VulkanRenderer::createSyncObjects()
+{
+	m_vecImageAvailableSemaphores.resize(MAX_FRAME_COUNT_IN_FLIGHT);
+	m_vecRenderFinishedSemaphores.resize(MAX_FRAME_COUNT_IN_FLIGHT);
+	m_vecInFlightFences.resize(MAX_FRAME_COUNT_IN_FLIGHT);
+
+	VkSemaphoreCreateInfo semaphoreCreateInfo{};
+	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	VkFenceCreateInfo fenceCreateInfo{};
+	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT; //初值为signaled
+
+	VkResult res;
+
+	for (int i = 0; i < MAX_FRAME_COUNT_IN_FLIGHT; ++i)
+	{
+		res = vkCreateSemaphore(m_LogicalDevice, &semaphoreCreateInfo, nullptr, &m_vecImageAvailableSemaphores[i]);
+		if (res != VK_SUCCESS)
+			throw std::runtime_error("Create Image Available Semaphore Failed");
+		res = vkCreateSemaphore(m_LogicalDevice, &semaphoreCreateInfo, nullptr, &m_vecRenderFinishedSemaphores[i]);
+		if (res != VK_SUCCESS)
+			throw std::runtime_error("Create Render Finished Semaphore Failed");
+		res = vkCreateFence(m_LogicalDevice, &fenceCreateInfo, nullptr, &m_vecInFlightFences[i]);
+		if (res != VK_SUCCESS)
+			throw std::runtime_error("Create Semaphore and Fence Failed");
+	}
+}
+```
+
 
 
 
