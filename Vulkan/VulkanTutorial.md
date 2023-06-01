@@ -1778,16 +1778,70 @@ glfwPollEvents();
 
 ## 等待Fence
 
-
+```cpp
+//等待fence的值变为signaled
+vkWaitForFences(m_LogicalDevice, 1, &m_vecInFlightFences[m_CurFrameIdx], VK_TRUE, UINT64_MAX);
+```
 
 
 ## 获取下一张Image
 
+```cpp
+uint32_t uiImageIdx;
+VkResult res = vkAcquireNextImageKHR(m_LogicalDevice, m_SwapChain, UINT64_MAX,
+	m_vecImageAvailableSemaphores[m_CurFrameIdx], VK_NULL_HANDLE, &uiImageIdx);
+if (res != VK_SUCCESS)
+{
+	if (res == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		//SwapChain与WindowSurface不兼容，无法继续渲染
+		//一般发生在window尺寸改变时
+		recreateSwapChain();
+		return;
+	}
+	else if (res == VK_SUBOPTIMAL_KHR)
+	{
+		//SwapChain仍然可用，但是WindowSurface的properties不完全匹配
+	}
+	else
+	{
+		throw std::runtime_error("Accquire Next Swap Chain Image Failed");
+	}
+}
+```
+
+
 ## 重置Fence
+
+```cpp
+//重设fence为unsignaled
+vkResetFences(m_LogicalDevice, 1, &m_vecInFlightFences[m_CurFrameIdx]);
+```
 
 ## 重置Command Buffer
 
+```cpp
+vkResetCommandBuffer(m_vecCommandBuffers[m_CurFrameIdx], 0);
+```
+
 ## 记录Command Buffer
+
+### 开始Command Buffer
+
+### 开始Render Pass
+
+### 绑定Pipeline
+
+### 绑定Vertex Buffer
+
+### 绑定Descriptor Set
+
+### Draw Index
+
+### 结束Render Pass
+
+### 结束Command Buffer
+
 
 ## 更新Uniform Buffer
 
