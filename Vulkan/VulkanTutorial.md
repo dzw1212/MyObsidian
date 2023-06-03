@@ -1469,7 +1469,48 @@ void VulkanRenderer::createTextureSampler()
 
 ## 载入模型
 
+获取模型的顶点与每个顶点的下标；
 
+```cpp
+void VulkanRenderer::loadModelByTinyObjLoader()
+{
+	tinyobj::attrib_t attr;	//存储所有顶点、法线、UV坐标
+	std::vector<tinyobj::shape_t> vecShapes;
+	std::vector<tinyobj::material_t> vecMaterials;
+	std::string strWarning;
+	std::string strError;
+
+	bool res = tinyobj::LoadObj(&attr, &vecShapes, &vecMaterials, &strWarning, &strError, m_strModelPath.c_str());
+	if (!res)
+		throw std::runtime_error("Load Model By TinyObjLoader Failed");
+
+	m_Vertices.clear();
+	m_Indices.clear();
+
+	std::unordered_map<Vertex3D, uint32_t> mapUniqueVertices;
+
+	for (const auto& shape : vecShapes)
+	{
+		for (const auto& index : shape.mesh.indices)
+		{
+			Vertex3D vert{};
+			vert.pos = {
+				attr.vertices[3 * static_cast<uint64_t>(index.vertex_index) + 0],
+				attr.vertices[3 * static_cast<uint64_t>(index.vertex_index) + 1],
+				attr.vertices[3 * static_cast<uint64_t>(index.vertex_index) + 2],
+			};
+			vert.texCoord = {
+				attr.texcoords[2 * static_cast<uint64_t>(index.texcoord_index) + 0],
+				1.f - attr.texcoords[2 * static_cast<uint64_t>(index.texcoord_index) + 1],
+			};
+			vert.color = glm::vec3(1.f, 1.f, 1.f);
+
+			m_Vertices.push_back(vert);
+			m_Indices.push_back(static_cast<uint32_t>(m_Indices.size()));
+		}
+	}
+}
+```
 
 ## 创建Vertex Buffer
 
@@ -1728,5 +1769,95 @@ void VulkanRenderer::createSyncObjects()
 
 # 主循环
 
+## 处理窗口事件
+
+```cpp
+g_Camera.ProcessKeyInput(m_pWindow);
+glfwPollEvents();
+```
+
+## 等待Fence
+
+```cpp
+//等待fence的值变为signaled
+vkWaitForFences(m_LogicalDevice, 1, &m_vecInFlightFences[m_CurFrameIdx], VK_TRUE, UINT64_MAX);
+```
+
+
+## 获取下一张Image
+
+```cpp
+uint32_t uiImageIdx;
+VkResult res = vkAcquireNextImageKHR(m_LogicalDevice, m_SwapChain, UINT64_MAX,
+	m_vecImageAvailableSemaphores[m_CurFrameIdx], VK_NULL_HANDLE, &uiImageIdx);
+if (res != VK_SUCCESS)
+{
+	if (res == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		//SwapChain与WindowSurface不兼容，无法继续渲染
+		//一般发生在window尺寸改变时
+		recreateSwapChain();
+		return;
+	}
+	else if (res == VK_SUBOPTIMAL_KHR)
+	{
+		//SwapChain仍然可用，但是WindowSurface的properties不完全匹配
+	}
+	else
+	{
+		throw std::runtime_error("Accquire Next Swap Chain Image Failed");
+	}
+}
+```
+
+
+## 重置Fence
+
+```cpp
+//重设fence为unsignaled
+vkResetFences(m_LogicalDevice, 1, &m_vecInFlightFences[m_CurFrameIdx]);
+```
+
+## 重置Command Buffer
+
+```cpp
+vkResetCommandBuffer(m_vecCommandBuffers[m_CurFrameIdx], 0);
+```
+
+## 记录Command Buffer
+
+### 开始Command Buffer
+
+### 开始Render Pass
+
+### 绑定Pipeline
+
+### 绑定Vertex Buffer
+
+### 绑定Descriptor Set
+
+### Draw Index
+
+### 结束Render Pass
+
+### 结束Command Buffer
+
+
+## 更新Uniform Buffer
+
+## 将Command Buffer提交到队列
+
+## 显示渲染结果
+
+
+
 # 清理Vulkan
 
+## 等待GPU空闲
+
+```cpp
+//等待GPU将当前的命令执行完成，资源未被占用时才能销毁
+vkDeviceWaitIdle(m_LogicalDevice);
+```
+
+## 释放资源
