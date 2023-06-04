@@ -40,5 +40,56 @@ Vulkan强迫用户在使用前就填充好`Pipeline State Object(PSO)`对象，�
 
 ![spirv|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230603011225.png)
 
-SPIRV作为一种`half-compiler`的文件类型，其被编译成机器码的速度远快于Shader源码，加快了运行速度；
-此外将Shader源码编译为SPIRV文件还避免了源码泄露的风险；
+1. SPIRV作为一种`half-compiler`的文件类型，其被编译成机器码的速度远快于Shader源码，加快了运行速度；
+2. 将Shader源码编译为SPIRV文件还避免了源码泄露的风险；
+3. 语法错误会在SPIRV阶段出现，而不是运行时；
+
+![glslangValidator|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230603135815.png)
+
+```cmd
+glslangValidator.exe -V sample-vert.vert -o sample-vert.spv
+```
+
+或者使用Google封装的`glslc`来编译SPV文件：
+```cmd
+glslc.exe –target-env=vulkan sample-vert.vert -o sample-vert.spv
+```
+
+`glslc`相比`glslangValidator`的部分优点：
+1. glslc支持shader文件内的`#include`操作；
+2. glslc支持shader文件内的`#define`操作，如下：
+```cmd
+glslc.exe --target-env=vulkan -DNUMPONTS=4 sample-vert.vert -o sample-vert.spv
+```
+
+## 创建Shader Module
+
+![shaderModule|600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230603135507.png)
+
+
+## 图元类型
+
+```cpp
+typedef enum VkPrimitiveTopology {
+    VK_PRIMITIVE_TOPOLOGY_POINT_LIST = 0,
+    VK_PRIMITIVE_TOPOLOGY_LINE_LIST = 1,
+    VK_PRIMITIVE_TOPOLOGY_LINE_STRIP = 2,
+    VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST = 3,
+    VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP = 4,
+    VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN = 5,
+    VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY = 6,
+    VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY = 7,
+    VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY = 8,
+    VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY = 9,
+    VK_PRIMITIVE_TOPOLOGY_PATCH_LIST = 10,
+    VK_PRIMITIVE_TOPOLOGY_MAX_ENUM = 0x7FFFFFFF
+} VkPrimitiveTopology;
+```
+
+![topology|600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230603104254.png)
+
+
+
+## 创建与填充Data Buffer
+
+![dataBuffer|600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230603150259.png)

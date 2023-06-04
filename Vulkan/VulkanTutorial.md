@@ -2,10 +2,19 @@
 
 ## GLFW实现
 
+`GLFW`是一个开源的、多平台的库，用于桌面上的OpenGL、OpenGL ES和Vulkan开发，它为创建窗口、上下文和表面、接收输入和事件提供了一个简单的API；
+
+`GLFW`是用C语言编写的，支持Windows、macOS、X11和Wayland。
+
 ```cpp
 void VulkanRenderer::initWindow()
 {
     glfwInit();
+    if (!glfwVulkanSupported())
+	{
+		throw std::runtime_error("GLFW version not support vulkan");
+		return;
+	}
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
@@ -1586,7 +1595,7 @@ void VulkanRenderer::createIndexBuffer()
 
 ## 创建Uniform Buffer
 
-不需要传递给DEVICE_LOCAL类型的内存（?）；
+之后在渲染的时候再map并填充；
 
 ```cpp
 void VulkanRenderer::createUniformBuffers()
@@ -1844,6 +1853,42 @@ vkResetCommandBuffer(m_vecCommandBuffers[m_CurFrameIdx], 0);
 
 
 ## 更新Uniform Buffer
+
+映射并填充Uniform Buffer Object的数据；
+
+```cpp
+void VulkanRenderer::updateUniformBuffer(uint32_t curFrameIdx)
+{
+	static auto startTime = std::chrono::high_resolution_clock::now();
+	auto currentTime = std::chrono::high_resolution_clock::now();
+
+	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+	
+	//time = 1.f;
+
+	auto AxisX = glm::vec3(1.f, 0.f, 0.f);
+	auto AxisY = glm::vec3(0.f, 1.f, 0.f);
+	auto AxisZ = glm::vec3(0.f, 0.f, 1.f);
+
+	UniformBufferObject ubo{};
+
+	auto rotate1 = glm::rotate(glm::mat4(1.f), glm::radians(-90.f), AxisX);
+	auto rotate2 = glm::rotate(glm::mat4(1.f), glm::radians(-135.f), AxisY);
+	
+	ubo.model = rotate2 * rotate1;
+	ubo.view = glm::lookAt(g_Camera.CameraPos, g_Camera.CameraPos + g_Camera.CameraTarget, g_Camera.CameraUp);
+	ubo.proj = glm::perspective(glm::radians(g_Camera.fFov),
+		(float)m_SwapChainExtent.width / (float)m_SwapChainExtent.height,
+		0.1f, 10.f);
+	//OpenGL与Vulkan的差异 - Y坐标是反的
+	ubo.proj[1][1] *= -1.f;
+
+	void* uniformBufferData;
+	vkMapMemory(m_LogicalDevice, m_vecUniformBufferMemories[curFrameIdx], 0, sizeof(ubo), 0, &uniformBufferData);
+	memcpy(uniformBufferData, &ubo, sizeof(ubo));
+	vkUnmapMemory(m_LogicalDevice, m_vecUniformBufferMemories[curFrameIdx]);
+}
+```
 
 ## 将Command Buffer提交到队列
 
