@@ -93,3 +93,30 @@ typedef enum VkPrimitiveTopology {
 ## 创建与填充Data Buffer
 
 ![dataBuffer|600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230603150259.png)
+
+
+## 管线数据结构
+
+![pipelineStage|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230605001521.png)
+
+管线数据结构包括：
+![pipelineDatastruct|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230605031455.png)
+
+其中加粗的部分可以设置为动态阶段；
+
+支持被设为动态阶段的有：
+```cpp
+VK_DYNAMIC_STATE_VIEWPORT -- vkCmdSetViewport( )
+VK_DYNAMIC_STATE_SCISSOR -- vkCmdSetScissor( )
+VK_DYNAMIC_STATE_LINE_WIDTH -- vkCmdSetLineWidth( )
+VK_DYNAMIC_STATE_DEPTH_BIAS -- vkCmdSetDepthBias( )
+VK_DYNAMIC_STATE_BLEND_CONSTANTS -- vkCmdSetBendConstants( )
+VK_DYNAMIC_STATE_DEPTH_BOUNDS -- vkCmdSetDepthZBounds( )
+VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK -- vkCmdSetStencilCompareMask( )
+VK_DYNAMIC_STATE_STENCIL_WRITE_MASK -- vkCmdSetStencilWriteMask( )
+VK_DYNAMIC_STATE_STENCIL_REFERENCE -- vkCmdSetStencilReferences( )
+```
+
+管线数据结构中几乎所有的组成部分都是固定大小的，除了`Descriptor Sets`和`Push Constants`，因此可以将管线数据结构看成由两部分组成：
+![pipelineData|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230606004347.png)
+

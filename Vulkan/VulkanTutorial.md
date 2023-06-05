@@ -80,6 +80,9 @@ void VulkanRenderer::getGLFWExtensions()
 
     m_vecChosedExtensions = std::vector<const char*>(m_glfwExtensions, m_glfwExtensions + m_glfwExtensionCount);
 }
+
+//VK_KHR_surface
+//VK_KHR_win32_surface
 ```
 
 ### 获取Validation Layer所需的Extension（可选）
@@ -925,6 +928,8 @@ if (res != VK_SUCCESS)
 
 
 ## 创建Graphic Pipeline
+
+BTW：以下各个阶段的顺序并不严格规定；
 
 ### 可编程管线部分
 
