@@ -120,3 +120,44 @@ VK_DYNAMIC_STATE_STENCIL_REFERENCE -- vkCmdSetStencilReferences( )
 管线数据结构中几乎所有的组成部分都是固定大小的，除了`Descriptor Sets`和`Push Constants`，因此可以将管线数据结构看成由两部分组成：
 ![pipelineData|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230606004347.png)
 
+
+
+## 贴图
+
+内存申请：
+![textureMemory|500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230607012756.png)
+
+
+指定参数：
+![textureParam|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230607013756.png)
+
+Mipmap：
+![textureMipmap|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230607015324.png)
+
+
+## Command Buffer
+
+![commandBuffer|500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230607034622.png)
+
+创建`Command Pool`，并指定具有`Graphic`功能的`Queue Family Index`；
+![createCommandPool|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230607034925.png)
+
+根据`Swap Chain`中图片的数量来创建`Command Buffer`；
+![allocateCommandBuffer|650](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230607035130.png)
+
+选择指定的一张`Command Buffer`，进行`Begin/End Command Buffer`；
+![beginEndCommandBuffer|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230607035349.png)
+
+
+## Swap Chain
+
+![swapChain|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230607035913.png)
+
+
+## Push Constant
+
+Vulkan规定这些`Push Constant`数据必须至少有128字节大小，尽管它们可以更大；
+例如，在NVIDIA 1080ti上的最大尺寸是256字节，可以通过查看 `VkPhysicalDeviceL`中的`maxPushConstantSize`参数来查询这个限制；
+
+
+
