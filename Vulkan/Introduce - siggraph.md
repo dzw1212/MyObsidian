@@ -143,6 +143,17 @@ create Descript Set：
 
 ![descriptorSets|500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230606131836.png)
 
+UBO使用`VkDescriptorBufferInfo`，Texture Sampler使用`VkDescriptorImageInfo`，二者都被封装在`VkWriteDescriptorSet`中，通过`vkUpdateDescriptorSets`来填充allocate出的Descriptor Set；
+![updateDescriptorSet|600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230607111309.png)
+
+在`vkCmdDraw`之前，使用`vkCmdBindDescriptorSets`绑定Descriptor Set；
+![bindDescriptorSet|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230607112402.png)
+
+
+总体流程：
+![totoalFlow|600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230607182306.png)
+
+
 ## 贴图
 
 内存申请：
