@@ -120,3 +120,26 @@ VK_DYNAMIC_STATE_STENCIL_REFERENCE -- vkCmdSetStencilReferences( )
 管线数据结构中几乎所有的组成部分都是固定大小的，除了`Descriptor Sets`和`Push Constants`，因此可以将管线数据结构看成由两部分组成：
 ![pipelineData|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230606004347.png)
 
+
+## 描述符集
+
+![descriptorSet|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230606125513.png)
+
+
+Descriptor Set Layout：
+
+![descriptorSetLayoyt|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230606131216.png)
+
+Descriptor Set Layout + Descriptor Set：
+
+![descriptor|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230606131644.png)
+
+
+Descriptor Set Pool：
+
+![descriptorSetPool|500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230606125617.png)
+
+create Descript Set：
+
+![descriptorSets|500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230606131836.png)
+
