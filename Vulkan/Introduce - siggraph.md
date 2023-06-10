@@ -193,3 +193,25 @@ Vulkan规定这些`Push Constant`数据必须至少有128字节大小，尽管�
 
 
 
+## Pipeline Dynamic State
+
+设置为Dynamic State的对象必须在Command Buffer中进行填充，否则其内容是undefined的；
+![dynamicState|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230608001758.png)
+
+
+常见的Dynamic State及其设置方法：
+![dynamicStateDefine|400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230608001826.png)
+
+![setDynamicState|800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230608002144.png)
+
+
+## Query Pool
+
+![QueryPool|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230608004336.png)
+
+![queryPoo2|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230608004432.png)
+
+## Compute Shader
+
+使用Compute Shader来辅助计算粒子系统；
+![computeShader|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230608015320.png)
