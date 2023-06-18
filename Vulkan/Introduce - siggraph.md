@@ -215,3 +215,126 @@ Vulkan规定这些`Push Constant`数据必须至少有128字节大小，尽管�
 
 使用Compute Shader来辅助计算粒子系统；
 ![computeShader|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230608015320.png)
+
+粒子数据结构：
+
+```cpp
+#define NUM_PARTICLES (1024*1024) // total number of particles to move
+#define NUM_WORK_ITEMS_PER_GROUP 64 // # work-items per work-group
+#define NUM_X_WORK_GROUPS ( NUM_PARTICLES / NUM_WORK_ITEMS_PER_GROUP )
+
+struct pos
+{
+	glm::vec4; // positions
+};
+struct vel
+{
+	glm::vec4; // velocities
+};
+struct col
+{
+	glm::vec4; // colors
+};
+```
+
+```cpp
+layout( std140, set = 0, binding = 0 ) buffer Pos
+{
+	vec4 Positions[ ]; // array of structures
+};
+
+layout( std140, set = 0, binding = 1 ) buffer Vel
+{
+	vec4 Velocities[ ]; // array of structures
+};
+
+layout( std140, set = 0, binding = 2 ) buffer Col
+{
+	vec4 Colors[ ]; // array of structures
+};
+```
+
+
+创建DescriptorLayout，将每个UBO对象的`descriptorType`设为`VK_DESCRIPTOR_TYPE_STORAGE_BUFFER`，将`stageFlags`设为`VK_SHADER_STAGE_COMPUTE_BIT`；
+
+![computeShaderLayout|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230610160732.png)
+
+![computeShaderLayout2|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230610180237.png)
+
+
+
+
+构建用于Compute Shader的`Compute Pipeline`：
+
+![ComputePipeline|550](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230610141756.png)
+
+![computePipeline|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230610151746.png)
+
+
+创建所需的buffer：
+
+![computeBuffer|600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230610190559.png)
+
+分配memory并bind：
+
+![computeShader|650](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230610190643.png)
+
+填充数据：
+
+![computeFillData|750](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230610193916.png)
+
+
+工作组，工作项与执行控件：
+![work-groups|750](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230610195707.png)
+
+![work-groups2|750](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230610200011.png)
+
+在shader中进行计算：
+
+![computerShader|750](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230610200131.png)
+
+启动computer shader：
+
+![computerShaderLaunch|750](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230610200241.png)
+
+
+## Specialization Constants
+
+![specializationConstant|300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230610201509.png)
+
+一言以蔽之，就是将常量的复制阶段，从shader->spv的阶段，延迟到调用`vkCreateComputePipelines`时。
+
+![specializationConstant|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230610204156.png)
+
+![specializationConstant|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230610211159.png)
+
+对于多个constant的情况：
+
+![specializationConstant|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230610215308.png)
+
+
+## 同步机制
+
+![synchronization|500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230610223940.png)
+
+
+使用Semaphore：
+
+![semaphore|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230610224627.png)
+
+使用fence：
+
+![fence|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230610225140.png)
+
+![fence|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230610230727.png)
+
+
+## 反走样与多重采样
+
+走样即信号的失真：
+![aliasing|600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230611020134.png)
+
+多重采样：
+![multisample|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230611020234.png)
+
+![multisample|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230611020324.png)
