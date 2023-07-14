@@ -15,48 +15,65 @@ PS：如果需要的Dynamic Uniform超过8个，应该检查Physical Device的`m
 
 ## Shader Binding
 
-使用动态Uniform，Shader中的Binding无需修改；
+将需要Batch Instance的部分分离出来，作为Dynamic Uniform Buffer；
 ```cpp
-layout (binding = 1) uniform UboInstance
+layout (binding = 0) uniform UniformBufferObject
 {
-	mat4 model; 
-} uboInstance;
+	mat4 view;
+	mat4 proj;
+} ubo;
+
+layout (binding = 1) uniform DynamicUniformBufferObject
+{
+	mat4 model;
+} dynamicUbo;
+
+layout (binding = 2) uniform sampler2D texSampler;
 ```
 
 ## Uniform Buffer/Memory
 
 使用指针而非vector，为了实现数据对齐；
 ```cpp
-struct UboDataDynamic {
-  glm::mat4 *model = nullptr;
-} uboDataDynamic;
+struct UniformBufferObject
+{
+	glm::mat4 view;
+	glm::mat4 proj;
+};
+
+struct DynamicUniformBufferObject
+{
+	glm::mat4* model;
+};
 ```
 
 Step1、计算对齐字节数，需要是`minUniformBufferOffsetAlignment`的整数倍，根据计算得到的字计数创建整个`Uniform Buffer`；
 PS：此处的算法必须需要minUboAligment为2的整数次方才正确；
 
 ```cpp
-#define INSTANCE_NUM 4
+#define INSTANCE_NUM 7
 
 auto physicalDeviceProperties = m_mapPhysicalDeviceInfo.at(m_PhysicalDevice).properties;
 size_t minUboAlignment = physicalDeviceProperties.limits.minUniformBufferOffsetAlignment;
-size_t dynamicAlignment = sizeof(glm::mat4) * 3; //model + view + proj
+m_DynamicAlignment = sizeof(glm::mat4); //model
 if (minUboAlignment > 0)
 {
-	dynamicAlignment = (dynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
+	m_DynamicAlignment = (m_DynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
 }
 
-VkDeviceSize dynamicUniformBufferSize = dynamicAlignment * INSTANCE_NUM;
+VkDeviceSize dynamicUniformBufferSize = m_DynamicAlignment * INSTANCE_NUM;
+
+m_DynamicUboData.model = (glm::mat4*)alignedAlloc(dynamicUniformBufferSize, m_DynamicAlignment);
+ASSERT(m_DynamicUboData.model, "Allocate dynamic ubo data");
 
 m_vecDynamicUniformBuffers.resize(m_vecSwapChainImages.size());
 m_vecDynamicUniformBufferMemories.resize(m_vecSwapChainImages.size());
 
-//为并行渲染的每一帧图像创建独立的Uniform Buffer
 for (size_t i = 0; i < m_vecSwapChainImages.size(); ++i)
 {
 	CreateBufferAndBindMemory(dynamicUniformBufferSize, 
 		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, //手动刷新，因此不适用VK_MEMORY_PROPERTY_HOST_COHERENT_BIT标记
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		m_vecDynamicUniformBuffers[i], 
 		m_vecDynamicUniformBufferMemories[i]
 	);
@@ -68,8 +85,13 @@ Step2、创建类型为`VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC`的`Descriptor
 ```cpp
 //ubo
 VkDescriptorPoolSize uboPoolSize{};
-uboPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC; //dynamic uniform类型
+uboPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 uboPoolSize.descriptorCount = static_cast<UINT>(m_vecSwapChainImages.size());
+
+//dynamic ubo
+VkDescriptorPoolSize dynamicUboPoolSize{};
+dynamicUboPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+dynamicUboPoolSize.descriptorCount = static_cast<UINT>(m_vecSwapChainImages.size());
 
 //sampler
 VkDescriptorPoolSize samplerPoolSize{};
@@ -78,6 +100,7 @@ samplerPoolSize.descriptorCount = static_cast<UINT>(m_vecSwapChainImages.size())
 
 std::vector<VkDescriptorPoolSize> vecPoolSize = {
 	uboPoolSize,
+	dynamicUboPoolSize,
 	samplerPoolSize,
 };
 
@@ -93,15 +116,23 @@ VULKAN_ASSERT(vkCreateDescriptorPool(m_LogicalDevice, &poolCreateInfo, nullptr, 
 ```cpp
 //UniformBufferObject Binding
 VkDescriptorSetLayoutBinding uboLayoutBinding{};
-uboLayoutBinding.binding = 0; //对应Vertex Shader中的layout(binding=0)
+uboLayoutBinding.binding = 0; //对应Vertex Shader中的layout binding
 uboLayoutBinding.descriptorCount = 1;
-uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;	//类型为Dynamic Uniform Buffer
+uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT; //只需要在vertex stage生效
 uboLayoutBinding.pImmutableSamplers = nullptr;
 
+//Dynamic UniformBufferObject Binding
+VkDescriptorSetLayoutBinding dynamicUboLayoutBinding{};
+dynamicUboLayoutBinding.binding = 1; //对应Vertex Shader中的layout binding
+dynamicUboLayoutBinding.descriptorCount = 1;
+dynamicUboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+dynamicUboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT; //只需要在vertex stage生效
+dynamicUboLayoutBinding.pImmutableSamplers = nullptr;
+
 //CombinedImageSampler Binding
 VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-samplerLayoutBinding.binding = 1; ////对应Fragment Shader中的layout(binding=1)
+samplerLayoutBinding.binding = 2; ////对应Fragment Shader中的layout binding
 samplerLayoutBinding.descriptorCount = 1;
 samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT; //只用于fragment stage
@@ -109,6 +140,7 @@ samplerLayoutBinding.pImmutableSamplers = nullptr;
 
 std::vector<VkDescriptorSetLayoutBinding> vecDescriptorLayoutBinding = {
 	uboLayoutBinding,
+	dynamicUboLayoutBinding,
 	samplerLayoutBinding,
 };
 
@@ -135,19 +167,34 @@ VULKAN_ASSERT(vkAllocateDescriptorSets(m_LogicalDevice, &allocInfo, m_vecDescrip
 for (size_t i = 0; i < m_vecSwapChainImages.size(); ++i)
 {
 	//ubo
-	VkDescriptorBufferInfo bufferInfo{};
-	bufferInfo.buffer = m_vecDynamicUniformBuffers[i];
-	bufferInfo.offset = 0;
-	bufferInfo.range = sizeof(UniformBufferObject);
+	VkDescriptorBufferInfo descriptorBufferInfo{};
+	descriptorBufferInfo.buffer = m_vecUniformBuffers[i];
+	descriptorBufferInfo.offset = 0;
+	descriptorBufferInfo.range = sizeof(UniformBufferObject);
 
 	VkWriteDescriptorSet uboWrite{};
 	uboWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	uboWrite.dstSet = m_vecDescriptorSets[i];
 	uboWrite.dstBinding = 0;
 	uboWrite.dstArrayElement = 0;
-	uboWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	uboWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	uboWrite.descriptorCount = 1;
-	uboWrite.pBufferInfo = &bufferInfo;
+	uboWrite.pBufferInfo = &descriptorBufferInfo;
+
+	//dynamic ubo
+	VkDescriptorBufferInfo dynamicDescriptorBufferInfo{};
+	dynamicDescriptorBufferInfo.buffer = m_vecDynamicUniformBuffers[i];
+	dynamicDescriptorBufferInfo.offset = 0;
+	dynamicDescriptorBufferInfo.range = 64;
+
+	VkWriteDescriptorSet dynamicUboWrite{};
+	dynamicUboWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	dynamicUboWrite.dstSet = m_vecDescriptorSets[i];
+	dynamicUboWrite.dstBinding = 1;
+	dynamicUboWrite.dstArrayElement = 0;
+	dynamicUboWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	dynamicUboWrite.descriptorCount = 1;
+	dynamicUboWrite.pBufferInfo = &dynamicDescriptorBufferInfo;
 
 	//sampler
 	VkDescriptorImageInfo imageInfo{};
@@ -158,7 +205,7 @@ for (size_t i = 0; i < m_vecSwapChainImages.size(); ++i)
 	VkWriteDescriptorSet samplerWrite{};
 	samplerWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	samplerWrite.dstSet = m_vecDescriptorSets[i];
-	samplerWrite.dstBinding = 1;
+	samplerWrite.dstBinding = 2;
 	samplerWrite.dstArrayElement = 0;
 	samplerWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	samplerWrite.descriptorCount = 1;
@@ -166,6 +213,7 @@ for (size_t i = 0; i < m_vecSwapChainImages.size(); ++i)
 
 	std::vector<VkWriteDescriptorSet> vecDescriptorWrite = {
 		uboWrite,
+		dynamicUboWrite,
 		samplerWrite,
 	};
 
@@ -196,8 +244,48 @@ for (UINT i = 0; i < INSTANCE_NUM; ++i)
 
 Step4、更新`Dynamic Uniform Buffer`；
 
+```cpp
+UniformBufferObject ubo{};
+ubo.view = m_Camera.GetViewMatrix();
+ubo.proj = m_Camera.GetProjMatrix();
+//OpenGL与Vulkan的差异 - Y坐标是反的
+ubo.proj[1][1] *= -1.f;
 
+void* uniformBufferData;
+vkMapMemory(m_LogicalDevice, m_vecUniformBufferMemories[uiIdx], 0, sizeof(ubo), 0, &uniformBufferData);
+memcpy(uniformBufferData, &ubo, sizeof(ubo));
+vkUnmapMemory(m_LogicalDevice, m_vecUniformBufferMemories[uiIdx]);
+
+glm::mat4* pModelMat = nullptr;
+for (UINT i = 0; i < INSTANCE_NUM; ++i)
+{
+	pModelMat = (glm::mat4*)(((uint64_t)m_DynamicUboData.model + (i * m_DynamicAlignment)));
+	*pModelMat = glm::translate(glm::mat4(1.f), { i * 1.25f, 0.f, 0.f });
+}
+
+void* dynamicUniformBufferData;
+vkMapMemory(m_LogicalDevice, m_vecDynamicUniformBufferMemories[uiIdx], 0, m_DynamicAlignment * INSTANCE_NUM, 0, &dynamicUniformBufferData);
+memcpy(dynamicUniformBufferData, m_DynamicUboData.model, m_DynamicAlignment * INSTANCE_NUM);
+vkUnmapMemory(m_LogicalDevice, m_vecDynamicUniformBufferMemories[uiIdx]);
+```
+
+PS：`Dynamic Uniform Buffer`一般不添加`VK_MEMORY_PROPERTY_HOST_COHERENT_BIT`属性，而是使用以下方法手动刷新Buffer缓存，这么做的好处是支持部分更新Buffer，总而拥有更小的开销；
+```cpp
+VkMappedMemoryRange memoryRange {};
+memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+memoryRange.memory = uniformBuffers.dynamic.memory;
+memoryRange.size = sizeof(uboDataDynamic);
+vkFlushMappedMemoryRanges(device, 1, &memoryRange);
+```
+
+# 效果展示
+
+![instance|750](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230715025335.png)
+
+
+# 参考
 
 https://zhuanlan.zhihu.com/p/54667292
 https://github.com/SaschaWillems/Vulkan/tree/master/examples/dynamicuniformbuffer
 https://zhuanlan.zhihu.com/p/550376820
+
