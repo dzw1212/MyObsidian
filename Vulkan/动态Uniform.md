@@ -32,21 +32,169 @@ struct UboDataDynamic {
 } uboDataDynamic;
 ```
 
-Step1、计算对齐字节数，需要是`minUniformBufferOffsetAlignment`的整数倍；
+Step1、计算对齐字节数，需要是`minUniformBufferOffsetAlignment`的整数倍，根据计算得到的字计数创建整个`Uniform Buffer`；
 PS：此处的算法必须需要minUboAligment为2的整数次方才正确；
 
 ```cpp
-void prepareUniformBuffers()
+#define INSTANCE_NUM 4
+
+auto physicalDeviceProperties = m_mapPhysicalDeviceInfo.at(m_PhysicalDevice).properties;
+size_t minUboAlignment = physicalDeviceProperties.limits.minUniformBufferOffsetAlignment;
+size_t dynamicAlignment = sizeof(glm::mat4) * 3; //model + view + proj
+if (minUboAlignment > 0)
 {
-	// Calculate required alignment based on minimum device offset alignment
-	size_t minUboAlignment = vulkanDevice->properties.limits.minUniformBufferOffsetAlignment;
-	dynamicAlignment = sizeof(glm::mat4);
-	if (minUboAlignment > 0) {
-		dynamicAlignment = (dynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
-	}
+	dynamicAlignment = (dynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
+}
+
+VkDeviceSize dynamicUniformBufferSize = dynamicAlignment * INSTANCE_NUM;
+
+m_vecDynamicUniformBuffers.resize(m_vecSwapChainImages.size());
+m_vecDynamicUniformBufferMemories.resize(m_vecSwapChainImages.size());
+
+//为并行渲染的每一帧图像创建独立的Uniform Buffer
+for (size_t i = 0; i < m_vecSwapChainImages.size(); ++i)
+{
+	CreateBufferAndBindMemory(dynamicUniformBufferSize, 
+		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, //手动刷新，因此不适用VK_MEMORY_PROPERTY_HOST_COHERENT_BIT标记
+		m_vecDynamicUniformBuffers[i], 
+		m_vecDynamicUniformBufferMemories[i]
+	);
+}
 ```
 
+Step2、创建类型为`VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC`的`DescriptorPool`、`DescriptorSetLayout`和`DescriptorSet`；
 
+```cpp
+//ubo
+VkDescriptorPoolSize uboPoolSize{};
+uboPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC; //dynamic uniform类型
+uboPoolSize.descriptorCount = static_cast<UINT>(m_vecSwapChainImages.size());
+
+//sampler
+VkDescriptorPoolSize samplerPoolSize{};
+samplerPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+samplerPoolSize.descriptorCount = static_cast<UINT>(m_vecSwapChainImages.size());
+
+std::vector<VkDescriptorPoolSize> vecPoolSize = {
+	uboPoolSize,
+	samplerPoolSize,
+};
+
+VkDescriptorPoolCreateInfo poolCreateInfo{};
+poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+poolCreateInfo.poolSizeCount = static_cast<UINT>(vecPoolSize.size());
+poolCreateInfo.pPoolSizes = vecPoolSize.data();
+poolCreateInfo.maxSets = static_cast<UINT>(m_vecSwapChainImages.size());
+
+VULKAN_ASSERT(vkCreateDescriptorPool(m_LogicalDevice, &poolCreateInfo, nullptr, &m_DescriptorPool), "Create descriptor pool failed");
+```
+
+```cpp
+//UniformBufferObject Binding
+VkDescriptorSetLayoutBinding uboLayoutBinding{};
+uboLayoutBinding.binding = 0; //对应Vertex Shader中的layout(binding=0)
+uboLayoutBinding.descriptorCount = 1;
+uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;	//类型为Dynamic Uniform Buffer
+uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT; //只需要在vertex stage生效
+uboLayoutBinding.pImmutableSamplers = nullptr;
+
+//CombinedImageSampler Binding
+VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+samplerLayoutBinding.binding = 1; ////对应Fragment Shader中的layout(binding=1)
+samplerLayoutBinding.descriptorCount = 1;
+samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT; //只用于fragment stage
+samplerLayoutBinding.pImmutableSamplers = nullptr;
+
+std::vector<VkDescriptorSetLayoutBinding> vecDescriptorLayoutBinding = {
+	uboLayoutBinding,
+	samplerLayoutBinding,
+};
+
+VkDescriptorSetLayoutCreateInfo createInfo{};
+createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+createInfo.bindingCount = static_cast<UINT>(vecDescriptorLayoutBinding.size());
+createInfo.pBindings = vecDescriptorLayoutBinding.data();
+
+VULKAN_ASSERT(vkCreateDescriptorSetLayout(m_LogicalDevice, &createInfo, nullptr, &m_DescriptorSetLayout), "Create descriptor layout failed");
+```
+
+```cpp
+VkDescriptorSetAllocateInfo allocInfo{};
+allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+allocInfo.descriptorSetCount = static_cast<UINT>(m_vecSwapChainImages.size());
+allocInfo.descriptorPool = m_DescriptorPool;
+
+std::vector<VkDescriptorSetLayout> vecDupDescriptorSetLayout(m_vecSwapChainImages.size(), m_DescriptorSetLayout);
+allocInfo.pSetLayouts = vecDupDescriptorSetLayout.data();
+
+m_vecDescriptorSets.resize(m_vecSwapChainImages.size());
+VULKAN_ASSERT(vkAllocateDescriptorSets(m_LogicalDevice, &allocInfo, m_vecDescriptorSets.data()), "Allocate desctiprot sets failed");
+
+for (size_t i = 0; i < m_vecSwapChainImages.size(); ++i)
+{
+	//ubo
+	VkDescriptorBufferInfo bufferInfo{};
+	bufferInfo.buffer = m_vecDynamicUniformBuffers[i];
+	bufferInfo.offset = 0;
+	bufferInfo.range = sizeof(UniformBufferObject);
+
+	VkWriteDescriptorSet uboWrite{};
+	uboWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	uboWrite.dstSet = m_vecDescriptorSets[i];
+	uboWrite.dstBinding = 0;
+	uboWrite.dstArrayElement = 0;
+	uboWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	uboWrite.descriptorCount = 1;
+	uboWrite.pBufferInfo = &bufferInfo;
+
+	//sampler
+	VkDescriptorImageInfo imageInfo{};
+	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView = m_TextureImageView;
+	imageInfo.sampler = m_TextureSampler;
+
+	VkWriteDescriptorSet samplerWrite{};
+	samplerWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	samplerWrite.dstSet = m_vecDescriptorSets[i];
+	samplerWrite.dstBinding = 1;
+	samplerWrite.dstArrayElement = 0;
+	samplerWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	samplerWrite.descriptorCount = 1;
+	samplerWrite.pImageInfo = &imageInfo;
+
+	std::vector<VkWriteDescriptorSet> vecDescriptorWrite = {
+		uboWrite,
+		samplerWrite,
+	};
+
+	vkUpdateDescriptorSets(m_LogicalDevice, static_cast<UINT>(vecDescriptorWrite.size()), vecDescriptorWrite.data(), 0, nullptr);
+}
+```
+
+Step3、使用`vkCmdBindDescriptorSets`分别填充每个实例的数据；
+
+```cpp
+for (UINT i = 0; i < INSTANCE_NUM; ++i)
+{
+	UINT uiDynamicOffset = i * static_cast<UINT>(m_DynamicAlignment);
+
+	vkCmdBindDescriptorSets(commandBuffer,
+		VK_PIPELINE_BIND_POINT_GRAPHICS, //descriptorSet并非Pipeline独有，因此需要指定是用于Graphic Pipeline还是Compute Pipeline
+		m_GraphicPipelineLayout, //PipelineLayout中指定了descriptorSetLayout
+		0,	//descriptorSet数组中第一个元素的下标 
+		1,	//descriptorSet数组中元素的个数
+		&m_vecDescriptorSets[uiIdx],
+		1, //启用动态Uniform偏移
+		&uiDynamicOffset	//指定动态Uniform的偏移
+	);
+
+	vkCmdDrawIndexed(commandBuffer, static_cast<UINT>(m_Indices.size()), 1, 0, 0, 0);
+}
+```
+
+Step4、更新`Dynamic Uniform Buffer`；
 
 
 
