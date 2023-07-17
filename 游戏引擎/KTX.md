@@ -38,3 +38,6 @@ texture.m_uiMipLevels = ktxTexture->numLevels;
 
 ktxTexture_Destroy(ktxTexture);
 ```
+
+# 其他格式转ktx
+
