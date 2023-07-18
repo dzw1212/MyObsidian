@@ -269,7 +269,7 @@ memcpy(dynamicUniformBufferData, m_DynamicUboData.model, m_DynamicAlignment * IN
 vkUnmapMemory(m_LogicalDevice, m_vecDynamicUniformBufferMemories[uiIdx]);
 ```
 
-PS：`Dynamic Uniform Buffer`一般不添加`VK_MEMORY_PROPERTY_HOST_COHERENT_BIT`属性，而是使用以下方法手动刷新Buffer缓存，这么做的好处是支持部分更新Buffer，总而拥有更小的开销；
+PS：`Dynamic Uniform Buffer`一般不添加`VK_MEMORY_PROPERTY_HOST_COHERENT_BIT`属性，而是使用以下方法手动刷新Buffer缓存，这么做的好处是支持部分更新Buffer，从而拥有更小的开销；
 ```cpp
 VkMappedMemoryRange memoryRange {};
 memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
@@ -287,5 +287,4 @@ vkFlushMappedMemoryRanges(device, 1, &memoryRange);
 
 https://zhuanlan.zhihu.com/p/54667292
 https://github.com/SaschaWillems/Vulkan/tree/master/examples/dynamicuniformbuffer
-https://zhuanlan.zhihu.com/p/550376820
 

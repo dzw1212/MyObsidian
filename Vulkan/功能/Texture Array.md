@@ -149,7 +149,10 @@ vkUnmapMemory(m_LogicalDevice, m_vecDynamicUniformBufferMemories[uiIdx]);
 
 # 效果
 
-![](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230718010118.png)
+![textureArray1|800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230718010118.png)
+
+![textureArray2|800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230719013706.png)
+
 
 # 参考
 
