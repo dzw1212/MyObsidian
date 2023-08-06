@@ -533,8 +533,16 @@ $$
 $$
 L_o=\int_{\Omega}(k_d(DiffuseBRDF)+k_s(SpecularBRDF))L_i(\omega_i\cdot n)d_{\omega_i}
 $$
+对于权重`Kd`和`Ks`：
+```cpp
+vec3 kS = F;
+vec3 kD = vec3(1.0) - kS;
+kD *= 1.0 - metallic;	 
+```
 
+如果Diffuse BRDF使用的是`Lambertian`模型，则需要乘以权重`Kd`；如果使用的是`Disney-Diffuse`模型，由于模型中已经考虑了反射项的大小，因此不需要再乘以权重；
 
+如果Specular BRDF使用的是`Cook-Torrance`模型，则也不需要再乘以权重；
 # PBR材质
 
 ![PBRMaterial|600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230806195914.png)
