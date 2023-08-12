@@ -70,3 +70,9 @@ $$
 优点：在各种粗糙度下，其反射效果都非常真实，且计算效率较高。
 缺点：相比于其他模型，其理论基础较为复杂，不易理解。
 
+![NDF|200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230808102454.png)
+
+
+![fresnel|200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230808102649.png)
+
+![GDF|200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230808102943.png)
