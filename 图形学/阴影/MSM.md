@@ -1,6 +1,7 @@
 *矩阴影贴图 Moment Shadow Mapping*
 
-相比VSSM，MSM希望更好地解决VSSM描述分布不准确的缺陷；[[VSSM]]
+相比VSSM，MSM希望更好地解决VSSM中描述分布不准确的缺陷；
+[[VSSM]]
 
 ## 原理
 
@@ -16,4 +17,12 @@ VSSM中用到了Shadow Map和Square-Depth Shadow Map，相当于用了一阶和�
 ![VSSM|350](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20221203191520.png)
 
 ![MSM|350](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20221203191611.png)
+
+# 优缺点
+
+优点：表现比VSSM更好；
+
+缺点：
+1. 更大的存储需求；
+2. 更大的计算量需求；
 
