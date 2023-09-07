@@ -30,7 +30,7 @@ $$
 但是只支持固定位置的正方形区域，并且需要进行插值，因此结果不准确；
 如果是非正方形的区域就无法使用`Mipmap`计算了；
 
-![mipmap|400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20221202033819.png)
+![mipmap|600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20221202033819.png)
 
 
 #### Summed Area Tables(SAT)
@@ -47,7 +47,7 @@ avg=\frac{SAT[m]-SAT[n-1]}{m-n}
 $$
 对于二维的情况，
 
-![SAT2|600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20221202034904.png)
+![SAT2|700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20221202034904.png)
 
 
 $$

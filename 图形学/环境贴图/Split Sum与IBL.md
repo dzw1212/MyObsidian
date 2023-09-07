@@ -1,25 +1,23 @@
-使用一张图记录各个方向的光照信息（默认光照来自无限远处）；
+# 存储格式
 
-## 存储格式
-
-### Spherical Map
+## Spherical Map
 
 ![SphericalMap|200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20221203224946.png)
 
 
-### Cube Map
+## Cube Map
 
 ![CubeMap|400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20221203225018.png)
 
-## IBL
+# IBL
 
 *基于图片的光照 Image Based Lighting*
 
-### 蒙特卡洛方法
+## 蒙特卡洛方法
 
 需要大量采样，费时，一般用于离线计算；
 
-### Split Sum近似
+## Split Sum近似
 
 
 ![IBLEquation|500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20221203232517.png)
@@ -54,7 +52,7 @@ $$
 
 ![prefilter|400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20221205011734.png)
 
-反射光形成一个波瓣（Lobe），
+反射光形成一个波瓣（`Lobe`），
 材质越粗糙，波瓣越大，Filter越大，所用的环境贴图越模糊；
 材质越光滑，波瓣越小，Filter越小，所用的环境贴图越清晰；
 
@@ -110,7 +108,7 @@ $$
 
 ![precomputeBRDF|200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20221205025511.png)
 
-#### Split Sum近似
+## 近似结果
 
 用求和取代积分：
 
