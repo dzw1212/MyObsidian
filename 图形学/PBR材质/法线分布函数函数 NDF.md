@@ -25,3 +25,9 @@ $\theta_h$ ：半程向量与法线之间的夹角；
 
 # GTR NDF
 
+即`General Trowbridge-Reitz NDF`，由迪士尼提出，可以通过系数 $\gamma$ 来控制拖尾的大小；
+当 $\gamma = 2$ 时，`GTR`就是`TR`也就是`GGX`分布；
+当 $\gamma=\infty$ 时，`GTR`就是`Beckman`分布；
+
+![NDF|500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230917141110.png)
+
