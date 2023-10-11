@@ -104,5 +104,6 @@ $$
 $$
 Visibility(x)=\sum_{q\in N(p)}w(p,q)\cdot \chi^+[D_{ShadowMap}(q)-D_{scene}(x)]
 $$
+
 *其中，$\chi^+$表示要么是1要么是0*
  
