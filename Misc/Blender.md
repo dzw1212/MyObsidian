@@ -2,6 +2,8 @@
 
 鼠标悬停后，可以按F1打开在线帮助文档；
 
+进入局部视图，快捷键`/`；
+
 唤出视图旋转选择菜单：`~`键：
 
 ![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231016000713.png)
@@ -65,6 +67,14 @@ BTW：循环面/并排面的快捷键相同，在面选择模式下即可；
 
 ![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231016013244.png)
 
+合并：选中多个物体然后右键->合并，快捷键Ctrl+J；
+	当选择多个物体时，橙红色轮廓的为选中项（多个），亮黄色轮廓的为活动项（最后1个选中）；
+	合并后的名称以活动项为准；
+
+分离：先选中一个顶点，再Ctrl+L选中相连项，右键->分离；
+
+拆分：拆出，但仍然属于同一个物体；
+
 # 面的基本操作
 
 1. 细分；
@@ -98,6 +108,12 @@ BTW：循环面/并排面的快捷键相同，在面选择模式下即可；
 ![200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231015220246.png)
 
 ![200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231015220556.png)
+
+9. 塌陷，将一个面坍缩成中心一个点；
+
+![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231016173408.png)
+
+![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231016173501.png)
 
 # 边的基本操作
 
@@ -217,3 +233,35 @@ BTW：循环面/并排面的快捷键相同，在面选择模式下即可；
 
 ![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231016015413.png)
 
+## ExtraObjects
+
+![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231016113448.png)
+
+常用的一些几何体：
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231016115626.png)
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231016120322.png)
+
+## BoolTool
+
+对两个模型做交、并、和、差操作；
+需要注意两个模型的选中顺序；
+
+![200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231016180407.png)
+
+差集 Difference：
+
+![200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231016180540.png)
+
+并集 Union：
+
+![200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231016180616.png)
+
+交集 Intersect：
+
+![200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231016180649.png)
+
+切片 Slice：
+
+![200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231016180915.png)
