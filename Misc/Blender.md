@@ -216,6 +216,30 @@ BTW：循环面/并排面的快捷键相同，在面选择模式下即可；
 
 ![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231016011504.png)
 
+
+# 曲线的基本操作
+
+1. 曲线倒角；
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231024111032.png)
+
+![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231024111105.png)
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231024111606.png)
+
+![250](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231024111633.png)
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231024112740.png)
+
+![250](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231024112809.png)
+
+使用自定义闭合曲线（要求XY平面内）作为横截面：
+PS：如果是三维曲线，则会取其XY平面的投影；
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231024114802.png)
+
+![250](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231024114835.png)
+
 # 基础概念
 
 ### 循环边 Loop
