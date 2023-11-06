@@ -297,6 +297,44 @@ BTW：循环面/并排面的快捷键相同，在面选择模式下即可；
 
 ![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231105235307.png)
 
+## 线框修改器
+
+![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231106230551.png)
+
+制作菱形网面：
+	对一个细分后的正方形网格进行右键->反细分，并设置迭代为1；
+	再添加线框修改器即可；
+
+![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231106231334.png)
+
+![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231106231425.png)
+
+
+## 表面细分着色器
+
+假设视图层级为n，则将原来的一个面细分为4的n次方个面；
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231106233253.png)
+
+表面细分着色器会对拐角进行平滑处理，如果想要保留拐角，可以添加**卡线**（两侧环切线）；
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231106234555.png)
+
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231106234746.png)
+
+
+折痕边：
+	选中边，右键->边线折痕；
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231107000701.png)
+
+
+如果拐角处有三角形或多边形，表面细分会遇到问题，应该尽量确保拐角处为四边面：
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231107002534.png)
+
+
 
 # 参考图与背景图
 
