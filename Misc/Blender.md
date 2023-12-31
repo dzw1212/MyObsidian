@@ -343,6 +343,8 @@ PS：如果一个材质没有被任何物体适应，则该材质不会被保存
 
 ![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231106233253.png)
 
+### 卡线
+
 表面细分着色器会对拐角进行平滑处理，如果想要保留拐角，可以添加**卡线**（两侧环切线）；
 
 ![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231106234555.png)
@@ -351,8 +353,9 @@ PS：如果一个材质没有被任何物体适应，则该材质不会被保存
 ![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231106234746.png)
 
 
-折痕边：
-	选中边，右键->边线折痕；
+### 折痕边
+
+选中边，右键->边线折痕；
 
 ![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231107000701.png)
 
@@ -361,7 +364,132 @@ PS：如果一个材质没有被任何物体适应，则该材质不会被保存
 
 ![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231107002534.png)
 
+## 几何节点修改器
 
+节点相当于一个函数，可以串联多个节点；
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231114224626.png)
+
+### 点上的实例
+
+类似于阵列修改器，不过功能更加强大，能在每个顶点处生成一个实例；
+
+物体A添加几何节点修改器->点上的实例，指定物体B作为实例：
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231114233531.png)
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231114233626.png)
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231114233652.png)
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231114233727.png)
+
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231114233810.png)
+
+
+生成的是参考物体的实例，不会随着参考物体而发生改变；若想要其随着参考物体发生改变，需要在修改参考物体后，对参考物体应用“旋转+缩放”；
+
+每次修改实例都需要应用旋转与缩放比较麻烦，更推荐的最法是使用**旋转实例**、**缩放实例**和**平移实例**来调整；
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231114234219.png)
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231114234337.png)
+
+### 网格基本体
+
+几何节点修改器所在的物体提供原始的几何数据（组输入），但不是一定要使用原始的几何数据；
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231114235158.png)
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231114235241.png)
+
+
+### 对齐欧拉至矢量
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231114235801.png)
+
+下图表示，将所有猴头的X轴方向，对准(0,0,1)方向（即Z轴方向）；
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231115000331.png)
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231115000444.png)
+
+通过添加“位置”节点，可以让猴头朝向自身的位置矢量，达到辐射状效果；
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231115001022.png)
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231115001039.png)
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231115001054.png)
+
+注意点：
+	1. 为了避免歧义，“对齐欧拉至矢量”中指定的对齐轴，应该与节点所在物体在同一个平面内；
+
+### 曲线上的实例
+
+先将曲线转换为顶点，再在顶点上添加实例；
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231117003735.png)
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231117004109.png)
+
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231117004123.png)
+
+### 曲线基本体
+
+更推荐的做法是使用几何节点修改器内置的曲线基本体，拥有更多的调整自由度；
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231117010100.png)
+
+
+## 简易形变修改器
+
+特点：
+	1. 不新增顶点，只修改现有顶点的位置；
+	2. 细分的越多，形变效果越好；
+
+### 扭曲
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231111232435.png)
+
+
+### 弯曲
+
+添加一个空物体作为参照；
+使空物体箭头的Y轴垂直于细分后的平面；
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231112000639.png)
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231112004936.png)
+
+
+### 锥化
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231111232609.png)
+
+### 拉伸
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231111232721.png)
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231111235139.png)
+
+
+## 曲线修改器
+
+将一个物体环切后，添加曲线修改器，可以指定一条曲线与指定的轴，使该物体沿着曲线形变；
+1. 需要对物体进行充分的细分，才能有好的弯曲效果；
+2. 沿着曲线的法向方向延伸；
+3. 需要使得物体与曲线的原点重合；
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231126101950.png)
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231126102815.png)
+
+控制点半径和倾斜对形变效果的影响：
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231126103448.png)
 
 # 参考图与背景图
 
