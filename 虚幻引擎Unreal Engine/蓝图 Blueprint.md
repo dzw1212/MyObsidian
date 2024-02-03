@@ -195,6 +195,43 @@ Space跳跃：
 遍历数组：
 ![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231205001942.png)
 
+#### 枚举
+
+创建枚举变量；
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240121210652.png)
+
+添加枚举值；
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240121210805.png)
+
+配合Switch；
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240121211059.png)
+
+#### 结构体
+
+创建结构体；
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240121211321.png)
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240121211458.png)
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240121213608.png)
+
+#### 数据表格
+
+相当于内置的csv表格；
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240121214015.png)
+
+创建数据表格时需要指定一个结构体，作为表头；
+
+![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240121220034.png)
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240121220127.png)
+
+
 
 ### 获取与设置
 
@@ -217,34 +254,19 @@ Space跳跃：
 
 ![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231203004901.png)
 
-## 键盘与鼠标输入
+## 蓝图交互
 
-![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231203013047.png)
+### 自定义事件
 
-![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231203013124.png)
+当不需要返回值，或者需要延时执行、异步执行、播放动画蒙太奇时，使用自定义事件；
 
-
-## 获取选中的物体
-
-场景中选中一个物体后，回到蓝图中右键；
-
-![350](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231203003954.png)
-
-## 控制流
-
-![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231204232853.png)
-
-Flip Flop节点：单数次运行时执行A，复数次运行时执行B；
-![130](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231204233443.png)
-
-Gate节点：状态为Open时向下执行，状态为Close时不向下执行；可以通过Toggle切换状态；
-![230](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231204233529.png)
-
-Multi-Gate节点：默认沿着Out0、Out1、...依次往下执行；可选择复位或循环；Start Index为-1时表示默认，为0时表示从第一个输出节点开始；
-![230](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231204233922.png)
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240128203135.png)
 
 
-## 函数
+### 函数
+
+当需要返回值，并且必须等待执行完成后在执行后续内容时，使用函数；
+
 
 ![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231210205441.png)
 
@@ -252,28 +274,28 @@ Multi-Gate节点：默认沿着Out0、Out1、...依次往下执行；可选择�
 
 ![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231210210744.png)
 
-### 纯函数
+#### 纯函数
 
 1. 函数内部的操作不会对外部产生影响（如修改全局变量的值）；
 2. 相同的输入总会得到相同的输出；
 
 纯函数与非纯函数的一个重要差别就是——**纯函数节点不会缓存结果**，当一个纯函数节点被多个节点引用时，其会被重复多次调用；因此，建议一个纯函数只被一个节点引用，如果需要多次引用，建议使用本地变量保存单次调用的结果；
 
-### 局部变量
+#### 局部变量
 
 ![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231210210315.png)
 
-### 与自定义事件的区别
+#### 与自定义事件的区别
 
 1. 函数有局部变量和返回值，自定义事件没有；
 2. 函数中不能使用`delay`节点，自定义事件可以；
 
-### 与宏的区别
+#### 与宏的区别
 
 1. 宏可以有多个输入、输出引脚；
 2. 其他蓝图可以调用函数，但不能调用宏；
 
-## 宏
+### 宏
 
 ![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231210213220.png)
 
@@ -281,7 +303,7 @@ Multi-Gate节点：默认沿着Out0、Out1、...依次往下执行；可选择�
 
 ![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231210213243.png)
 
-### 宏库
+#### 宏库
 
 宏库是一个管理多个宏的文件，可以在所有蓝图中调用；
 
@@ -297,8 +319,173 @@ Multi-Gate节点：默认沿着Out0、Out1、...依次往下执行；可选择�
 
 ![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231210222820.png)
 
+### 与场景对象的交互
 
-## 时间轴
+一般会在蓝图中创建一个对应场景对象类型的变量，用来储存该场景对象，然后通过该变量与场景对象交互；
+
+### 与关卡蓝图的交互
+
+通过`Execute Console Command`执行关卡蓝图中的事件；
+调用该事件时必须以`ce `开头；
+
+![250](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240128204617.png)
+
+
+### 蓝图接口
+
+蓝图接口是一种蓝图中通信的方式，可以在各种不同类型的蓝图中使用，可以用来替代多态继承；
+**使用同一接口的不同蓝图可以有不同的接口实现，且不要求这些蓝图之间有继承关系**；
+
+类似于c++中的抽象类；
+#### 创建接口
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240129012827.png)
+
+接口中可以定义函数名、输入、输出，但不能实现，相当于只是声明；
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240129014137.png)
+
+#### 实现接口中的函数
+
+在蓝图的`Class Settings`中选择要实现的接口；
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240129014435.png)
+
+![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240129014529.png)
+
+![200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240129014544.png)
+
+如果函数没有返回值，蓝图会自动将其识别为**事件**；
+
+![200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240129014837.png)
+
+反之则识别为函数；
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240129014902.png)
+
+#### 使用接口持有蓝图
+
+实现了该接口的蓝图，可以使用该接口类型的句柄进行持有；
+
+![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240129020212.png)
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240129020150.png)
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240129020350.png)
+
+### 事件分发器
+
+事件分发器（`Event Dispatcher`）提供了一种强大的通信机制，允许不同的蓝图组件之间进行消息传递和事件通知；
+
+- **广播**（Broadcast）：这实际上是事件分发器的“调用”操作，用于触发事件。当事件分发器被广播时，所有绑定到该事件的函数都会被执行。这是事件通知的发送方；
+
+- **绑定**（Bind）：这个操作用于将一个函数或事件绑定到事件分发器上。当事件分发器被广播时，所有绑定的函数都会被调用。这是事件通知的接收方；
+
+- **解绑**（Unbind）：这个操作用于从事件分发器上解绑一个特定的函数或事件。解绑后，当事件分发器被广播时，该函数不再被调用；
+
+- **解绑所有**（Unbind All）：这个操作用于从事件分发器上解绑所有函数和事件。解绑所有后，当事件分发器被广播时，不会有任何函数被调用；
+
+- **事件**（Event）：这通常指的是绑定到事件分发器的具体事件或函数。在蓝图中，你可以创建自定义事件，并将其绑定到事件分发器上，以便在事件分发器被广播时执行；
+
+- **分配**（Assign）：这是一个特定的绑定操作，通常用于一次性地将事件分发器与一个事件或函数关联起来。分配操作可能会在某些上下文中用于初始化事件绑定；
+
+总的来说，可以把事件分发器看成一个特殊事件，与之关联的`Event`则可以看作是该特殊事件的处理函数；`Call`即为广播该特殊事件，`Bind`为将一个事件处理函数与该特殊事件相关联，`Assign`则是自动生成一个与该特殊事件关联的处理函数；
+
+比如说，我在一个蓝图中发出`ED_PusherMove`事件，另一个蓝图相应该事件并播放一段音频：
+
+广播该事件分发器：
+![200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240204020344.png)
+
+另一个蓝图中：（其中ED_PusherMove_Event为分配时自动生成的事件）
+
+![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240204020417.png)
+
+
+## 继承
+
+允许子蓝图继承父蓝图的组件、变量、事件、函数；
+
+比如说要创建系统自带第三人称蓝图的子蓝图：
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240128210201.png)
+
+### 继承中的多态
+
+可以使用父蓝图类型的句柄存储子蓝图示例，并在需要使用子蓝图的功能时显式类型转换为对应的子蓝图；
+
+
+
+## 检测
+
+### 碰撞检测
+
+1. 使用自身进行检测；
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240129031245.png)
+
+![220](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240129031343.png)
+
+2. 添加碰撞组件进行检测；
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240129031611.png)
+
+![350](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240129031644.png)
+
+### 射线检测
+
+以一个点朝着一个方向发射一条射线，当这条射线碰到了物体，则执行某个事件；
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240129032240.png)
+
+比如检测鼠标点击物体：
+
+![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240129040524.png)
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240129040559.png)
+
+
+调试方法：
+
+![200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240130003555.png)
+
+### 形状检测
+
+以指定的形状发射射线，检测形状范围内的对象；
+
+常见的形状检测节点：
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240130003824.png)
+
+## 其他
+
+### 键盘与鼠标输入
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231203013047.png)
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231203013124.png)
+
+
+### 获取选中的物体
+
+场景中选中一个物体后，回到蓝图中右键；
+
+![350](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231203003954.png)
+
+### 控制流
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231204232853.png)
+
+Flip Flop节点：单数次运行时执行A，复数次运行时执行B；
+![130](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231204233443.png)
+
+Gate节点：状态为Open时向下执行，状态为Close时不向下执行；可以通过Toggle切换状态；
+![230](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231204233529.png)
+
+Multi-Gate节点：默认沿着Out0、Out1、...依次往下执行；可选择复位或循环；Start Index为-1时表示默认，为0时表示从第一个输出节点开始；
+![230](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231204233922.png)
+
+
+### 时间轴
 
 在指定的时间内，将值从初始值变化到目标值；
 
@@ -306,15 +493,9 @@ Multi-Gate节点：默认沿着Out0、Out1、...依次往下执行；可选择�
 
 ![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231210224014.png)
 
-## 插值
+### 插值
 
 与时间轴节点实现完美配合；
 
 ![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231210224634.png)
-
-## 与关卡蓝图交互
-
-蓝图类中可以调用关卡蓝图中定义的事件，通过`Execute Console Command`节点，并且事件名前必须加上`ce `；
-
-![250](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231210232728.png)
 

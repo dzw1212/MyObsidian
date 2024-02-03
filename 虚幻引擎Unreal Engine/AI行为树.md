@@ -21,6 +21,10 @@ AI行为树是一种用于控制角色行为的图形化工具，用于实现游
 
 ![150](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240104013108.png)
 
+3. 并行节点`Parallel`：左边部分为主任务，只能执行简单的任务；右边部分为并行任务，可以执行复杂任务，与主任务同时进行；
+
+![350](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240116032804.png)
+
 ## 任务节点 Task
 
 表示具体的行为或动作，是行为树中的基本操作单元，每个任务节点对应一个具体行为，如移动/攻击/待机等；
@@ -273,5 +277,33 @@ AI行为树是一种用于控制角色行为的图形化工具，用于实现游
 
 ![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240108010720.png)
 
+## EQS与黑板的交互
+
+比如，将Grid检测中的GridSize绑定为参数；
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240116032104.png)
+
+然后将该参数与一个黑板键相关联；
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240116032315.png)
+
+
+
 ## 自定义生成器
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240110000930.png)
+
+`Class Default`详情面板中选择生成物类型，这里使用Point；
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240110001204.png)
+
+比如说，在Z轴方向垂直绘制检测点：
+
+![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240110004959.png)
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240110005041.png)
+
+效果：
+
+![200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240110005112.png)
 
