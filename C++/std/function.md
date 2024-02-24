@@ -120,3 +120,33 @@ int main()
 	return 0;
 }
 ```
+
+
+## 接受隐式转换
+
+`std::function`支持参数和返回值的隐式类型转换，只要这些转换是安全的。这意味着，如果你有一个`std::function`对象，它的参数类型或返回类型与实际传递给它的函数、`Lambda`表达式、函数对象等的相应类型不完全匹配，但这些类型之间存在隐式转换，那么这个转换会自动发生；
+
+这是`typedef`函数指针所不具备的灵活性；
+
+```cpp
+#include <functional>
+#include <iostream>
+
+void demonstrate(std::function<double(int)> func) {
+    std::cout << func(5) << std::endl;
+}
+
+int main() {
+    // Lambda表达式接受一个double，返回一个int
+    auto lambda = [](double x) -> int {
+        return static_cast<int>(x * x);
+    };
+
+    // 尽管std::function期望一个接受int返回double的函数，
+    // 但由于存在隐式转换（int到double的参数转换，int到double的返回值转换），
+    // 这里的lambda可以被正确调用。
+    demonstrate(lambda);
+
+    return 0;
+}
+```
