@@ -1,10 +1,10 @@
 [[yaml语法]]
 
-Node是yaml-cpp中的核心概念，是最重要的数据结构，用于存储解析后的yaml信息；
+`Node`是`yaml-cpp`中的核心概念，是最重要的数据结构，用于存储解析后的`yaml`信息；
 
 # Node的类型
 
-Node的类型有：
+`Node`的类型有：
 ```c++
 struct NodeType {
 	enum value 
@@ -18,13 +18,13 @@ struct NodeType {
 };
 ```
 
-查询Node的类型：
+查询`Node`的类型：
 ```c++
 node.type();
 node.IsSequence();
 ```
 
-yaml数组与对象的使用方法类似于`std::vector`和`std::map`；
+`yaml`数组与对象的使用方法类似于`std::vector`和`std::map`；
 ```c++
 //Sequence
 YAML::Node primes = YAML::Load("[2,3,4,5,6]");
@@ -94,7 +94,7 @@ v.push_back(1);
 std::string str = node[v].as<std::string>();
 ```
 
-假如是自定义的数据类型，与yaml类型的转换需要定义转换函数`YAML::convert<template T>`；
+假如是自定义的数据类型，与`yaml`类型的转换需要定义转换函数`YAML::convert<template T>`；
 ```c++
 struct Vec3 { double x, y, z; };
 ```
@@ -136,7 +136,7 @@ node["end"] = Vec3(2, -1, 0);
 
 # 发送yaml
 
-发送yaml需要使用`YAML::Emitter`，其使用方式类似于`std::ostream`，并且可以通过`c_str()`函数获取到输出的内容；
+发送`yaml`需要使用`YAML::Emitter`，其使用方式类似于`std::ostream`，并且可以通过`c_str()`函数获取到输出的内容；
 ```c++
 #include "yaml-cpp/yaml.h"
 
