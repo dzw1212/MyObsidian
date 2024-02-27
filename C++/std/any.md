@@ -1,118 +1,46 @@
-*any作为一个可以存放不同类型的值的容器，可以避免在编程时因类型不能同时兼容声明太多的临时局部变量*
+`std::any`是C++17标准库的一部分，**提供了一种类型安全的方式来存储和操作任意类型的值**，它可以存储单个值，这个值可以是任何类型，**只要该类型满足复制构造和析构的条件**；`std::any`主要用于需要处理不确定类型数据的场景；
 
+1. 存储值：你可以通过构造函数或`std::any`的`emplace`方法来存储值；
 
-# Quick Start
+2. 访问值：要访问`std::any`中存储的值，你可以使用`std::any_cast`。如果尝试将`std::any`对象转换为与其存储值不兼容的类型，这个操作可能抛出`std::bad_any_cast`异常；
 
-```c++
+3. 检查是否有值：使用`has_value`方法可以检查`std::any`对象是否存储了值；
+
+4. 移除值：使用`reset`方法可以移除存储的值，使`std::any`对象变为空；
+
+```cpp
 #include <any>
 #include <iostream>
- 
-int main()
+#include <string>
+
+void ProcessAny(const std::any& value) //通过const ref传参
 {
-    std::cout << std::boolalpha;
- 
-    // any type
-    std::any a = 1;
-    std::cout << a.type().name() << ": " << std::any_cast<int>(a) << '\n';
-    a = 3.14;
-    std::cout << a.type().name() << ": " << std::any_cast<double>(a) << '\n';
-    a = true;
-    std::cout << a.type().name() << ": " << std::any_cast<bool>(a) << '\n';
-
-	a.type().name(); //"bool"
-	a.type() == typeid(bool); //true
-	
-    // bad cast
-    try
-    {
-        a = 1;
-        std::cout << std::any_cast<float>(a) << '\n';
-    }
-    catch (const std::bad_any_cast& e)
-    {
-        std::cout << e.what() << '\n';
-    }
- 
-    // has value
-    a = 2;
-    if (a.has_value())
-    {
-        std::cout << a.type().name() << ": " << std::any_cast<int>(a) << '\n';
-    }
- 
-    // reset
-    a.reset();
-    if (!a.has_value())
-    {
-        std::cout << "no value\n";
-    }
- 
-    // pointer to contained data
-    a = 3;
-    int* i = std::any_cast<int>(&a);
-    std::cout << *i << "\n";
+	...
 }
-```
 
-```
-int: 1
-double: 3.14
-bool: true
-bad_any_cast
-int: 2
-no value
-3
-```
+int main() {
+	std::any a = 10; // 存储int
+    std::cout << std::any_cast<int>(a) << std::endl; // 访问值
 
----
+    a = std::string("Hello, std::any!"); // 存储string
+    std::cout << std::any_cast<std::string>(a) << std::endl; // 访问值
 
-any中的值是使用衰减类型存储的（比如数组的话存储为头指针），对于字符串常量，值的类型是`const char*`而不是`std::string`；
-```c++
-std::any a = "hello";
+    // 尝试安全访问值
+    try {
+        std::cout << std::any_cast<double>(a) << std::endl; // 错误的类型转换
+    } catch (const std::bad_any_cast& e) {
+        std::cout << e.what() << std::endl; // 捕获并处理异常
+    }
 
-a.type() == typeid(std::string); //false
-a.type() == typeid(const char*); //true
-```
+    if (a.has_value()) {
+        std::cout << "a has a value." << std::endl;
+    }
 
-any没有定义比较运算符，没有hash函数，也没有取值函数，其值只有在运行时才直到类型；
+    a.reset(); // 移除值
+    if (!a.has_value()) {
+        std::cout << "a is now empty." << std::endl;
+    }
 
-一个有趣的用法是，any可以作为标准库容器的元素：
-```c++
-std::vector<std::any> vec;
-vec.push_back(10);
-vec.push_back(20.0);
-vec.push_back("30");
-```
-
-# 构造
-
-```c++
-std::any a1; //empty
-std::any a2 = 10; //类型为int
-std::any a3 = "10"; //类型为const char*
-std::any a4 = 10.0; //类型为double
-
-//若要保存与推断值不同的类型，需要借助in_type_type或者make_any
-std::any a5{std::in_place_type<unsigned char>, 10 };
-std::cout << a5.type().name() << std::endl; //"unsigned char"
-
-a5 = std::make_any<float>(20);
-std::cout << a5.type().name() << std::endl; //"float"
-std::cout << std::any_cast<float>(a5) << std::endl; //20
-
-//若是通过多个参数初始化，则需要创建该复杂对象或者使用in_place_type声明类型
-std::any a6{std::complex{3.0, 4.0}};
-std::any a7{std::in_place_type<std::complex<``double``>>, 3.0, 4.0};
-```
-
-# 赋值
-
-直接使用`=`或者使用`emplace`；
-
-```c++
-std::any a;
-a = 42; // a contains value of type int
-a = "hello"; // a contains value of type const char*
-
-a.emplace<std::string>("hello world"); // a contains value of type std::string
+    return 0;
+}
 ```

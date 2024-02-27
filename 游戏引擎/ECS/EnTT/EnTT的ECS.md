@@ -344,6 +344,5 @@ for(auto it = view.rbegin(), last = view.rend(); it != last; ++iter) {
 }
 ```
 
-
 ## 运行时view
 

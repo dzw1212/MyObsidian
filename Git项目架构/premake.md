@@ -15,8 +15,6 @@ premake是一个通过lua脚本生成工程文件的命令行工具，支持VS�
 $ premake5 --file=MyProjectScript.lua vs2013
 ```
 
-
-
 ## 脚本示例
 
 对于一个简单的c程序，
