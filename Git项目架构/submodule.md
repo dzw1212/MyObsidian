@@ -1,5 +1,26 @@
 Git的`submodule`允许你将一个Git仓库作为另一个Git仓库的子目录，这对于包含第三方代码或库非常有用；
 
+需要注意的是，通过`git submodule`下载的一般仅是源代码，但是项目一般需要的是include目录+lib文件，所以下载了子模块之后还得手动进行编译生成include目录+lib文件，因此有些人如果使用premake进行项目构建时，会先fork一份原来的项目，然后在自己fork的版本里添加premake5.lua，再使用premake的links功能来链式编译子模块；
+
+比如我想对GLFW库做这样的操作，我就要在GLFW项目中添加premake5.lua文件，然后在自身项目的premake5.lua中添加：
+```cpp
+include "Dazel/Vender/GLFW"
+
+links
+{
+	"GLFW"
+}
+```
+
+然后premake就会去寻找`Dazel/Vender/GLFW`目录下的premake5.lua文件并进行项目构建；
+
+如果子模块是head-only的，就不用这么麻烦了：
+```cpp
+includedirs
+{
+    "Vender/spdlog/include",
+}
+```
 # .gitmodules文件
 
 一般来说Git会自动修改这个文件，但某些时候（比如删除时）需要手动修改；

@@ -1,24 +1,27 @@
 `HSL(hue, saturation, lightness)`：色相，饱和度，亮度；
-`HSV/HSB(hue, saturation, value/brightness)`：色相，饱和度，色彩值；
-HSL与HSV是RGB色彩模型的替代，更贴近人类视觉对色彩的感知；
+`HSV/HSB(hue, saturation, value/brightness)`：色相，饱和度，亮度值；
+
+`HSL`与`HSV`是`RGB`色彩模型的替代，更贴近人类视觉对色彩的感知；
+
+- 色相：颜色的种类（红、蓝等）；
+- 饱和度：表示颜色的纯度，从纯色到灰色；
+- 亮度值：颜色的明亮程度；
+
 
 ![HSL/HSV|450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20230413105139.png)
 
-## HSL
+# 区别
 
-HSL模拟了现实世界中不同颜料混合在一起创造颜色的方式，lightness维度表示黑色和白色颜料的不同比例，完全饱和的颜色位于lightness=0.5的圆圈周围；
+`HSL`模拟了现实世界中不同颜料混合在一起创造颜色的方式，`lightness`维度表示黑色和白色颜料的不同比例，完全饱和的颜色位于`lightness=0.5`的圆圈周围；
 
-## HSV
+与`HSV/HSB`的主要区别在于，`HSL`的亮度
+范围为黑色到白色，而`HSV/HSB`的亮度值是基于颜色的亮度，范围为黑色到纯色；
 
-HSV模拟了颜色在光线下的显示；
+`HSL`中的黑色和白色，在`HSV`中相当于用黑色和白色光线照耀有色物体得到的颜色；
 
-## 区别
+# 转换
 
-HSL中的黑色和白色，在HSV中相当于用黑色和白色光线照耀有色物体得到的颜色；
-
-## 转换
-
-### RGB到HSB
+## RGB到HSB
 
 ```c++
 vec3 rgb2hsb( in vec3 c )
@@ -36,7 +39,7 @@ vec3 rgb2hsb( in vec3 c )
 }
 ```
 
-### HSB到RGB
+## HSB到RGB
 
 ```c++
 //  Function from Iñigo Quiles

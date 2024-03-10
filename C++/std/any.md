@@ -44,3 +44,7 @@ int main() {
     return 0;
 }
 ```
+
+---
+
+与之类似的有`std::variant`，但是`varient`需要事先写出允许的类型有哪些；[[variant]]

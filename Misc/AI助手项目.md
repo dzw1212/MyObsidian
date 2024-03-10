@@ -1,0 +1,6 @@
+https://github.com/adamcohenhillel/ADeus
+# Supabase
+
+`password`：DZWydxhLXM2024
+`anon public API key`：eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoenJxdHVjd2t2ZXZ6dWxzZ3dpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk4MTU5NzYsImV4cCI6MjAyNTM5MTk3Nn0.-PsxLTT12u_kYZ35pvj1rV4hSXyl20GA5ZKMDEhnFmo
+`Project URL`：https://xhzrqtucwkvevzulsgwi.supabase.co
