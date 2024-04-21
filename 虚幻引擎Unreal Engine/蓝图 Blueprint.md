@@ -156,6 +156,62 @@ Space跳跃：
 ![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231210193252.png)
 
 
+## 玩家控制器蓝图
+
+`Player Controller`是一个特殊的控制器，用于从玩家的键鼠、手柄、触摸板等获得输入信息，并根据这些信息驱动玩家所控制的`Pawn`或`Character`的行为；在网络游戏中，玩家控制器还起到网络交互节点的作用；
+
+每个游戏中至少有一个玩家控制器；
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240206020949.png)
+
+### 设置输入模式
+
+限制`Game`还是`UI`会响应玩家输入；
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240206022017.png)
+
+### 设置自定义玩家控制器
+
+重载游戏模式后，可以在世界设置中设置玩家控制器类；
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240206023333.png)
+
+
+## 游戏模式蓝图
+
+用于创建游戏的各种模板，定义游戏的玩法规则和流程；
+
+- 提供一种组织和规范游戏开发流程的方式，以确保游戏能够在开发的过程中保持一致性和可维护性；
+- 用于创建不同类型的游戏，更容易地扩展玩法和功能；
+- 自定义默认的Pawn类、玩家控制器等；
+
+### 重载自定义游戏模式
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240206023027.png)
+
+## 游戏实例蓝图
+
+`Game Instance`是独立于关卡之外的全局实例对象，一个游戏只能有一个游戏实例，用于存储全局的数据、事件和方法；
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240206030120.png)
+
+### 调用游戏实例
+
+![200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240206030607.png)
+
+
+## SaveGame蓝图
+
+能够将数据存储在客户端本地；
+
+以下实现一个`Ctrl S`时保存数据、`Ctrl L`时读取数据的例子；
+
+![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240207014704.png)
+
+![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240207014801.png)
+
+
+
 # 通用
 
 ## 变量
@@ -294,6 +350,13 @@ Space跳跃：
 
 1. 宏可以有多个输入、输出引脚；
 2. 其他蓝图可以调用函数，但不能调用宏；
+
+#### 函数转为事件
+
+转为事件的函数要求无返回值；
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240206014411.png)
+
 
 ### 宏
 
@@ -464,6 +527,10 @@ Space跳跃：
 
 ![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231203013124.png)
 
+### 显示/隐藏鼠标指针
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240206021718.png)
+
 
 ### 获取选中的物体
 
@@ -498,4 +565,10 @@ Multi-Gate节点：默认沿着Out0、Out1、...依次往下执行；可选择�
 与时间轴节点实现完美配合；
 
 ![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231210224634.png)
+
+### 慢动作/快动作
+
+默认值为1.0，设置小于1.0的值实现慢动作效果，设置大于1.0的值实现快动作效果；
+
+![250](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240315005735.png)
 
