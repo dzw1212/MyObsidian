@@ -1,5 +1,9 @@
-chrono是一个时间库，
-头文件为`#include <chrono>`，一般还需要`#include <ratio>`；
+`std::chrono` 是 C++11 引入的一个库，用于处理日期和时间。这个库提供了时间点（`time_point`）、持续时间（`duration`）和时钟（`clock`）的概念，使得时间相关的操作更加直观和安全；
+
+
+- **持续时间（Duration）**：表示时间的长度。例如，10秒可以表示为 `std::chrono::seconds(10)`；
+- **时间点（Time Point）**：表示某个特定的时间点。例如，现在的时间可以用 `std::chrono::system_clock::now()` 表示；
+- **时钟（Clock）**：提供访问当前时间点的方法。常用的时钟有 `std::chrono::system_clock`（系统时钟，通常用于表示现实世界的时间）和 `std::chrono::steady_clock`（稳定时钟，主要用于测量时间间隔）；
 
 # 时间段 duration
 
@@ -14,13 +18,13 @@ template <intmax_t N, intmax_t D = 1> class ratio;
 //std::ratio表示一个分数值，N为分子(numerator)，D为分母(denominator)
 ```
 
-|已定义变量|实际含义|
-|:-|:-|
-|std::chrono::hours|`std::chrono::duration<int, 3600>|
-|minutes|`duration<int, std::ratio<60>>|
-|seconds|`duration<long long>|
-|milliseconds|`duration<long long, std::milli>|
-|nanoseconds|`duration<long long, std::nano>|
+| 已定义变量              | 实际含义                              |
+| :----------------- | :-------------------------------- |
+| std::chrono::hours | `std::chrono::duration<int, 3600> |
+| minutes            | `duration<int, std::ratio<60>>    |
+| seconds            | `duration<long long>              |
+| milliseconds       | `duration<long long, std::milli>  |
+| nanoseconds        | `duration<long long, std::nano>   |
 
 ```c++
 std::milli // 1 / 10^3
@@ -113,4 +117,57 @@ std::tm tm_data;
 localtime_s(&tm_data, &timestamp);
 printf("%d:%d:%d\n", tm_data.tm_year + 1900, tm_data.tm_mon + 1, tm_data.tm_mday);
 //2023:1:19
+```
+
+# 常见用法
+
+## 获取当前时间
+
+```cpp
+#include <iostream>
+#include <chrono>
+#include <ctime>
+
+int main() {
+    auto now = std::chrono::system_clock::now();
+    std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+    std::cout << "当前时间: " << std::ctime(&now_c);
+    return 0;
+}
+```
+
+## 测量代码执行时间
+
+```cpp
+#include <iostream>
+#include <chrono>
+
+int main() {
+    auto start = std::chrono::high_resolution_clock::now();
+    
+    // 放置需要测量执行时间的代码
+    for (int i = 0; i < 1000000; ++i) {}
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    std::cout << "执行时间: " << elapsed.count() << "秒" << std::endl;
+    return 0;
+}
+```
+
+## 表示特定时间长度
+
+```cpp
+#include <iostream>
+#include <chrono>
+
+int main() {
+    std::chrono::hours halfDay(12);
+    std::chrono::minutes halfHour(30);
+    std::chrono::seconds fiveMinutes(300);
+    
+    auto total = halfDay + halfHour + fiveMinutes;
+    std::cout << "总时间: " << std::chrono::duration_cast<std::chrono::minutes>(total).count() << "分钟" << std::endl;
+    return 0;
+}
 ```

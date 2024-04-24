@@ -134,3 +134,30 @@ private:
 std::unique_ptr<Singleton> Singleton::instance;
 std::once_flag Singleton::initInstanceFlag;
 ```
+
+单文件写法（不需要一个额外的cpp文件去做静态成员初始化）：
+```cpp
+// Singleton.h
+#ifndef SINGLETON_H
+#define SINGLETON_H
+
+template<typename T> //可作为基类
+class Singleton {
+public:
+    static T& instance() {
+        static T instance;
+        return instance;
+    }
+
+private:
+    Singleton() = default;
+    ~Singleton() = default;
+
+    Singleton(const Singleton&) = delete;
+    Singleton& operator=(const Singleton&) = delete;
+    Singleton(Singleton&&) = delete;
+    Singleton& operator=(Singleton&&) = delete;
+};
+
+#endif // SINGLETON_H
+```

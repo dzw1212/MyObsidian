@@ -1,6 +1,6 @@
 `std::function`是一个**函数包装模板**，可以包装函数、函数指针、类成员函数指针或任意类型的函数对象；
-std::function对象可以被拷贝和转移，并且可以使用指定的调用特征来直接调用目标元素；
-当std::function对象未包裹任何实际可调用的元素时，强行调用会抛出`std::bad_function_call`异常；
+`std::function`对象可以被拷贝和转移，并且可以使用指定的调用特征来直接调用目标元素；
+当`std::function`对象未包裹任何实际可调用的元素时，强行调用会抛出`std::bad_function_call`异常；
 
 ## 包装普通函数
 ```c++
@@ -146,6 +146,34 @@ int main() {
     // 但由于存在隐式转换（int到double的参数转换，int到double的返回值转换），
     // 这里的lambda可以被正确调用。
     demonstrate(lambda);
+
+    return 0;
+}
+```
+
+## 将任意函数转为std::function<void()>
+
+需要借助`std::bind`；[[bind]]
+
+```cpp
+#include <iostream>
+#include <functional>
+
+// 示例函数
+void exampleFunction(int a, double b) {
+    std::cout << "a: " << a << ", b: " << b << std::endl;
+}
+
+int main() {
+    // 为exampleFunction的参数提供默认值
+    int defaultA = 10;
+    double defaultB = 3.14;
+
+    // 使用std::bind绑定参数
+    std::function<void()> func = std::bind(exampleFunction, defaultA, defaultB);
+
+    // 调用转换后的函数
+    func();
 
     return 0;
 }
