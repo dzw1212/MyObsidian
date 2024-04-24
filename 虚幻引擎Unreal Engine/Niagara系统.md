@@ -21,7 +21,7 @@
 
 # 阶段 Stage
 
-类似`Emitter Spawn`，`Emitter Update`，`Render`之类的称为`Stage`，在执行时会按顺序一次从上往下执行内部的`Module`（`Render`除外，顺序不一定从上到下）；
+类似`Emitter Spawn`，`Emitter Update`，`Render`之类的称为`Stage`，在执行时会按顺序依次从上往下执行内部的`Module`（`Render`除外，顺序不一定从上到下）；
 
 - `Emitter Spawn`：发射器生成时执行一次；
 - `Emitter Update`：发射器每帧执行一次；
