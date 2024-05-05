@@ -12,6 +12,68 @@
 
 使用`Gameplay Tags`系统，开发者可以构建出更加模块化和可重用的游戏逻辑，提高游戏开发的效率和灵活性。
 
+# 在GAS中的使用
+
+在给对象赋予标签时，如果对象拥有`ASC`，通常会将标签加在`ASC`上，以便于`GAS`交互，`UAbilitySystemComponent`中实现了`IGameplayTagAssetInterface`，提供了访问标签的接口；
+
+`FGameplayTagContainer`中可以存储多个`FGameplayTag`，这种做法比使用数组来管理标签更为高效（如`TArray<FGameplayTag>`）；如果项目设置中启用了`Fast Replication`功能，`FGameplayTagContainer`就能更高效地打包和复制标签，这有利于服务器与客户端之间的标签同步；
+
+## 标签的同步
+
+如果一个标签是通过`Gameplay Effect`添加的，那它会自动被复制并同步给所有客户端；
+
+如果你想手动管理标签的同步，可以使用`LooseGameplayTags`，这种标签不会被复制；
+
+## 获取标签
+
+获取标签的引用：
+```cpp
+FGameplayTag::RequestGameplayTag(FName("Your.GameplayTag.Name"))
+```
+
+获取标签的父级或子级（需要用到`GameplayTagManager`）：
+```cpp
+//获取父标签
+TArray<FGameplayTag> ParentTags;
+ChildTag.RequestGameplayTagParents(ParentTags);
+
+//获取子标签
+UGameplayTagsManager& TagManager = UGameplayTagsManager::Get();
+TArray<FGameplayTag> ChildTags;
+TagManager.RequestGameplayTagChildren(ParentTag, ChildTags);
+```
+
+## 标签事件
+
+`ASC`可以通过`RegisterGameplayTagEvent`指定标签发生更改时的回调函数，并且通过`EGameplayTagEventType`来筛选标签事件类型；
+
+```cpp
+#include "GameplayTagContainer.h"
+#include "AbilitySystemComponent.h"
+
+void UMyClass::SetupTagEventListeners(UAbilitySystemComponent* AbilitySystemComp)
+{
+    FGameplayTag SomeGameplayTag = FGameplayTag::RequestGameplayTag(FName("Character.State.Poisoned"));
+    
+    // 订阅标签添加或移除的事件
+    AbilitySystemComp->RegisterGameplayTagEvent(SomeGameplayTag, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &UMyClass::OnTagChanged);
+}
+
+void UMyClass::OnTagChanged(const FGameplayTag Tag, int32 NewCount)
+{
+    if (NewCount > 0)
+    {
+        UE_LOG(LogTemp, Log, TEXT("Tag %s added"), *Tag.ToString());
+        // 处理标签添加的逻辑
+    }
+    else
+    {
+        UE_LOG(LogTemp, Log, TEXT("Tag %s removed"), *Tag.ToString());
+        // 处理标签移除的逻辑
+    }
+}
+```
+
 # 标签配置文件
 
 `Gameplay Tag`系统的配置通常是通过一个名为`DefaultGameplayTags.ini`的配置文件进行的。这个文件位于项目的`Config`目录下。通过编辑这个文件，你可以定义和组织你的游戏中使用的所有`Gameplay Tags`。
@@ -31,6 +93,8 @@
 ```
 
 这里的`+GameplayTags=`条目用于添加新的标签，`TagName`指定了标签的完整名称，而可选的`Comment`字段则为标签提供了描述。
+
+# 标签编辑器
 
 除了手动编辑`DefaultGameplayTags.ini`文件外，UE的编辑器也提供了一个可视化的`Gameplay Tag`编辑器，允许你在不直接编辑配置文件的情况下管理标签。你可以在编辑器中通过导航到`Edit` -> `Project Settings` -> `Gameplay Tags`来访问和配置这些标签。
 
