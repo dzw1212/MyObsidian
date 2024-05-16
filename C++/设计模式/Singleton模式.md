@@ -33,7 +33,7 @@ Singleton* Singleton::instance = nullptr;
 ```
 
 多线程安全版本（`mutex`）：
-[[mutex]]
+[[std-mutex]]
 ```cpp
 #include <mutex>
 
@@ -103,7 +103,7 @@ std::mutex Singleton::mutex;
 ```
 
 多线程安全版本（`call_once`，C++11后可用）：
-[[call_once]]
+[[std-call_once]]
 ```cpp
 #include <iostream>
 #include <memory>
@@ -160,4 +160,9 @@ private:
 };
 
 #endif // SINGLETON_H
+```
+
+宏定义实现：
+```cpp
+
 ```

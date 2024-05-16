@@ -153,7 +153,7 @@ int main() {
 
 ## 将任意函数转为std::function<void()>
 
-需要借助`std::bind`；[[bind]]
+需要借助`std::bind`；[[std-bind]]
 
 ```cpp
 #include <iostream>

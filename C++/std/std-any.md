@@ -81,4 +81,4 @@ if (strPtr != nullptr) {
 
 ---
 
-与之类似的有`std::variant`，但是`varient`需要事先写出允许的类型有哪些；[[variant]]
+与之类似的有`std::variant`，但是`varient`需要事先写出允许的类型有哪些；[[std-variant]]

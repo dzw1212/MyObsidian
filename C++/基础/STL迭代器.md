@@ -32,5 +32,5 @@
 
 类型标签可以通过`iterator_traits`中的`iterator_category`进行获取；
 
-[[iterator_traits]]
+[[std-iterator_traits]]
 
