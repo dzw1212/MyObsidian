@@ -1,5 +1,6 @@
 {
   "promptDelete": false,
   "autoConvertHtml": false,
-  "alwaysUpdateLinks": true
+  "alwaysUpdateLinks": true,
+  "focusNewTab": true
 }
