@@ -39,3 +39,11 @@ int main()
 
 用于高效地读取大型csv文件；
 
+```cpp
+io::CSVReader<3> in("your_file.csv"); //读取3列数据
+in.read_header(io::ignore_extra_column, "Column1", "Column2", "Column3");
+std::string col1; int col2; double col3;
+while(in.read_row(col1, col2, col3)){
+   // 处理每行数据
+}
+```

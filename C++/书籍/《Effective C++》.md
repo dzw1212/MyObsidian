@@ -1395,7 +1395,7 @@ public:
 
 2. 用于std::iterator_traits指明类型；
 
-[[iterator_traits]]
+[[std-iterator_traits]]
 
 # 43 . 学习处理模板化基类内的名称
 
@@ -1628,7 +1628,7 @@ void advance(IterT& iter, DistT& d)
 
 为此需要获取迭代器的类型，这正是`traits`的功能 —— 允许在编译期间取得某些类型信息；
 
-[[iterator_traits#获取类型信息]]
+[[std-iterator_traits#获取类型信息]]
 
 `traits`并不是一个关键词，而是一个C++程序员共同遵守的协议，只要遵守这个协议，它对内置类型和用户自定义类型的表现就能一致；
 
@@ -1638,7 +1638,7 @@ void advance(IterT& iter, DistT& d)
 1. `TMP`让某些事情变得更容易，如果没有它，某些事情会是困难甚至不可能的；
 2. 由于`TMP`执行于编译器，因此可将工作从运行期转移到编译器，使得程序更高效，坏处则是编译器变长了；
 
-[[iterator_traits#is_base_of与typeid]]
+[[std-iterator_traits#is_base_of与typeid]]
 
 ## TMP的hello world - 计算阶乘
 

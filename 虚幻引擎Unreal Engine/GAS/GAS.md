@@ -20,11 +20,11 @@
 
 为单人和多人游戏提供了一个开箱即用的解决方案，用于：
 
-- 实现具有可选成本和冷却时间的基于等级的角色能力或技能（[[GameplayAbility]]）
+- 实现具有可选成本和冷却时间的基于等级的角色能力或技能（[[Gameplay Ability]]）
 - 操作属于演员的数值属性（[[GamePlay Attribute]]）
 - 将状态效果应用于演员（[[Gameplay Effect]]）
 - 将GameplayTags应用于演员（[[Gameplay Tags]]）
-- 生成视觉或声音效果（[[Gameplay Cue]]）
+- 生成视觉或声音效果（[[Gameplay Cues]]）
 
 在多人游戏中，`GAS`支持以下客户端预测：
 
@@ -39,7 +39,7 @@
 
 # 添加ASC
 
-在`GAS`中，要实现技能（`Ability`）触发时来源显示对应的`Actor`，你需要确保每个参与技能交互的`Actor`都拥有一个[[Ability System Component]]（`ASC`）。这个组件是`GAS`的核心，负责管理技能、属性和效果。以下是将`Ability System Component`附加到`Actor`并使用它的基本步骤：
+在`GAS`中，要实现技能（`Ability`）触发时来源显示对应的`Actor`，你需要确保每个参与技能交互的`Actor`都拥有一个[[ASC]]（`ASC`）。这个组件是`GAS`的核心，负责管理技能、属性和效果。以下是将`Ability System Component`附加到`Actor`并使用它的基本步骤：
 
 ## 1. 创建Ability System Component
 
