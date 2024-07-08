@@ -1,13 +1,15 @@
 在虚幻引擎的Gameplay Ability System (GAS) 中，`UAbilitySystemComponent` 是一个核心组件，用于管理和执行能力（Abilities）和效果（Effects）。以下是一些常用的方法：
 
 1. **Ability Management:**
-   - `GiveAbility(FGameplayAbilitySpec AbilitySpec)`: 给组件添加一个能力。
+	- `GiveAbility(FGameplayAbilitySpec AbilitySpec)`: 给组件添加一个能力。
 
-   - `ClearAbility(FGameplayAbilitySpecHandle Handle)`: 移除一个特定的能力。
+	- `ClearAbility(FGameplayAbilitySpecHandle Handle)`: 移除一个特定的能力。
 
-   - `TryActivateAbility(FGameplayAbilitySpecHandle Handle, bool bAllowRemoteActivation)`: 尝试激活一个特定的能力。
+	- `TryActivateAbility(FGameplayAbilitySpecHandle Handle, bool bAllowRemoteActivation)`: 尝试激活一个特定的能力。
 
-   - `CancelAbility(FGameplayAbilitySpecHandle Handle)`: 取消一个正在进行的能力。
+	- `CancelAbility(FGameplayAbilitySpecHandle Handle)`: 取消一个正在进行的能力；
+
+	- `InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor)`: 用于初始化与能力系统相关的角色信息，通常在角色或玩家状态初始化时或`PlayerController`的`OnPossess`时调用，以确保能力系统组件正确地知道它所关联的角色和控制器；
 
 
 
@@ -50,6 +52,8 @@
 	- `RegisterGameplayTagEvent(FGameplayTag Tag, EGameplayTagEventType::Type EventType=EGameplayTagEventType::NewOrRemoved)`: 注册一个委托，当指定的标签发生变化时，该委托会被调用；
 
 	- `UnregisterGameplayTagEvent(FDelegateHandle DelegateHandle, FGameplayTag Tag, EGameplayTagEventType::Type EventType=EGameplayTagEventType::NewOrRemoved)`: 取消某个委托的注册；
+
+	- `SetTagMapCount(const FGameplayTag& Tag, int32 NewCount)`: 直接设置指定标签的计数值，标签计数用于管理标签的状态。例如，当标签计数大于零时，标签被视为“激活”状态；当计数为零时，标签被视为“非激活”状态。
 
 
 
