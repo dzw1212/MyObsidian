@@ -1,6 +1,6 @@
 在虚幻引擎的Gameplay Ability System (GAS) 中，`UAbilitySystemComponent` 是一个核心组件，用于管理和执行能力（Abilities）和效果（Effects）。以下是一些常用的方法：
 
-1. **Ability Management:**
+1. **Ability 相关**
 	- `GiveAbility(FGameplayAbilitySpec AbilitySpec)`: 给组件添加一个能力。
 
 	- `ClearAbility(FGameplayAbilitySpecHandle Handle)`: 移除一个特定的能力。
@@ -11,10 +11,10 @@
 
 	- `InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor)`: 用于初始化与能力系统相关的角色信息，通常在角色或玩家状态初始化时或`PlayerController`的`OnPossess`时调用，以确保能力系统组件正确地知道它所关联的角色和控制器；
 
+	- `BindAbilityActivationToInputComponent(UInputComponent* InputComponent, FGameplayAbilityInputBinds BindInfo)`：将输入组件与能力系统组件绑定，从而使得玩家可以通过输入来激活或取消能力；
 
 
-
-2. **Effect Management:**
+2. **Effect 相关**
    - `ApplyGameplayEffectToSelf(TSubclassOf<UGameplayEffect> GameplayEffectClass, float Level, FGameplayEffectContextHandle EffectContext)`: 将一个效果应用到自己身上。
 
    - `ApplyGameplayEffectToTarget(TSubclassOf<UGameplayEffect> GameplayEffectClass, UAbilitySystemComponent* Target, float Level, FGameplayEffectContextHandle EffectContext)`: 将一个效果应用到目标身上。
@@ -33,7 +33,7 @@
 
 
 
-3. **属性管理**
+3. **Attribute 相关**
    - `GetNumericAttribute(FGameplayAttribute Attribute)`: 获取一个属性的数值。
 
    - `SetNumericAttributeBase(FGameplayAttribute Attribute, float NewBaseValue)`: 设置一个属性的基础数值。
@@ -42,7 +42,7 @@
 
 
 
-4. **标签管理**
+4. **Tag 相关**
 	- `AddLooseGameplayTag(FGameplayTag Tag)`: 添加一个松散的Gameplay Tag。
 
 	- `RemoveLooseGameplayTag(FGameplayTag Tag)`: 移除一个松散的Gameplay Tag。
@@ -57,13 +57,13 @@
 
 
 
-5. **Cooldowns and Costs:**
+5. **Cooldowns 与 Costs 相关**
 	- `GetCooldownTimeRemaining(FGameplayAbilitySpecHandle Handle)`: 获取一个能力的剩余冷却时间。
 
 	- `GetCurrentAbilityCost(FGameplayAbilitySpecHandle Handle)`: 获取一个能力的当前消耗。
 
 
-6. 网络复制
+6. **网络同步相关**
 	- `SetIsReplicated(bool bShouldReplicate)`: 设置组件是否应该被复制；
 
 	- `SetReplicationMode(EGameplayEffectReplicationMode NewReplicationMode)`: 设置组件的复制模式，复制模式决定了组件如何以及何时被复制；

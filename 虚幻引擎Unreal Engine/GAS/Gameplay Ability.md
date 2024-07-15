@@ -314,3 +314,11 @@ void UFireballAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 
 在实际项目中，你还需要在游戏的其他部分（如角色类或游戏模式类）中配置和使用这个能力，包括将其添加到角色的`AbilitySystemComponent`中。
 
+# Gameplay Ability Actor
+
+![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240715225934.png)
+
+## Target Actor
+
+`GameplayAbilityTargetActor` 是一个用于处理目标选择的类。它提供了一种机制，让玩家或AI能够选择目标或目标区域，以便应用能力效果。`GameplayAbilityTargetActor` 可以用于多种目标选择方式，例如单个目标、区域目标、射线检测等。
+
