@@ -314,6 +314,39 @@ void UFireballAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 
 在实际项目中，你还需要在游戏的其他部分（如角色类或游戏模式类）中配置和使用这个能力，包括将其添加到角色的`AbilitySystemComponent`中。
 
+# Cost与Cooldown
+
+`GameplayAbility`基类中，自带`Cost`与`Cooldown`的机制；
+
+![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240716074352.png)
+
+![1200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240716074420.png)
+
+当`CommitAbility`时，会去检测`Cost`与`Cooldown`是否满足条件；也可以通过`CommitAbilityCost`或`CommitAbilityCooldown`单独检测某一项；
+
+```cpp
+//UGameplayAbility::CommitCheck
+
+if (!AbilitySystemGlobals.ShouldIgnoreCooldowns() && !CheckCooldown(Handle, ActorInfo, OptionalRelevantTags))
+{
+	return false;
+}
+
+if (!AbilitySystemGlobals.ShouldIgnoreCosts() && !CheckCost(Handle, ActorInfo, OptionalRelevantTags))
+{
+	return false;
+}
+```
+
+`CheckCost`中检测能否对属性值执行对应的操作，如果未通过，则会加上`ActivateFailCostTag`标记；
+
+![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240716074945.png)
+
+`CheckCooldown`中则是检测是否存在对应的冷却标签，如果存在则说明冷却未完成，添加`ActivateFailCooldownTag`标记；
+
+![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240716075240.png)
+
+
 # Gameplay Ability Actor
 
 ![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240715225934.png)
@@ -321,4 +354,15 @@ void UFireballAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 ## Target Actor
 
 `GameplayAbilityTargetActor` 是一个用于处理目标选择的类。它提供了一种机制，让玩家或AI能够选择目标或目标区域，以便应用能力效果。`GameplayAbilityTargetActor` 可以用于多种目标选择方式，例如单个目标、区域目标、射线检测等。
+
+`GameplayAbilityTargetActor`的子类一般都会重写`StartTargeting(UGameplayAbility* Ability)`和`ConfirmTargetingAndContinue()`方法：
+
+- `StartTargeting`：用于初始化目标选择过程，它通常会设置目标选择器的初始状态，比如显示目标指示器、设置目标选择的范围和规则等；当一个`Gameplay Ability`开始目标选择过程时，会调用此方法，通常在玩家激活一个需要选择目标的能力时触发；
+- `ConfirmTargetingAndContinue`：用于确认目标选择并继续执行能力，它会处理目标选择的结果，并将这些结果传递给能力系统，以便后续的能力执行；当目标选择过程完成并且玩家确认了选择的目标时，会调用次方法，通常在玩家点击确认按钮或完成目标选择操作时触发；
+
+虚幻中预先提供了一些`Target Actor`的子类：
+
+# Radius
+
+`AGameplayAbilityTargetActor_Radius` 会定义一个圆形区域，通常通过一个半径值来确定该区域的大小；
 
