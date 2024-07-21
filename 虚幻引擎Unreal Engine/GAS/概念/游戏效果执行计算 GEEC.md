@@ -1,4 +1,4 @@
-`GEEC`（游戏效果执行计算，`Gameplay Effect Execution Calculation`），是`GameplayEffect`对`ASC`进行更改的最强大的方法；类似于[[MMC]]，它也可以捕获属性并对其进行快照，但不同的是`GEEC`能够更改多个属性，并且更加灵活，与此同时牺牲的是可预测性；
+`GEEC`（游戏效果执行计算，`Gameplay Effect Execution Calculation`），是`GameplayEffect`对`ASC`进行更改的最强大的方法；类似于[[修饰符幅度计算 MMC]]，它也可以捕获属性并对其进行快照，但不同的是`GEEC`能够更改多个属性，并且更加灵活，与此同时牺牲的是可预测性；
 
 `GEEC`仅可用于瞬时和周期性的`GameplayEffect`；
 

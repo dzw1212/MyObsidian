@@ -20,6 +20,8 @@
 
 ![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/abilityflowchartsimple.png)
 
+带有[[Ability Tasks]]的流程：
+
 ![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/abilityflowchartcomplex.png)
 
 # 将输入绑定到ASC

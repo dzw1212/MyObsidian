@@ -1,6 +1,6 @@
 `MMC`（修饰符幅度计算，`Modifier Magnitude Calculation`），这是一个用于计算和定义`GameplayEffect`中属性修改量的类，`MMC` 允许开发者通过编程方式定义属性修改的复杂逻辑，而不仅仅是简单的数值修改；
 
-`MMC`的功能与 [[GEEC]] 类似，但没有那么强大，最重要的是它们可以被预测。它们的唯一目的是从 `CalculateBaseMagnitude_Implementation()` 返回一个浮点值；
+`MMC`的功能与 [[游戏效果执行计算 GEEC]] 类似，但没有那么强大，最重要的是它们可以被预测。它们的唯一目的是从 `CalculateBaseMagnitude_Implementation()` 返回一个浮点值；
 
 `MMC`可用于瞬时的、持续的、无限时间的、周期的，即所有类型的`GameplayEffect`；
 # 使用场景

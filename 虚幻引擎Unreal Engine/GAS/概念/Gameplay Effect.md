@@ -15,6 +15,9 @@ FYI：`UGameplayEffect`是一个纯数据类，不应在其中添加任何的逻
 
 # 分类
 
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240722011413.png)
+
+
 根据效果的持续时间和触发方式，`GameplayEffect`可以被分为三种主要类型：瞬时的（`Instant`）、持续的（`Duration`）、和周期的（`Periodic`）：
 
 1. 瞬时的（`Instant`）
@@ -24,7 +27,7 @@ FYI：`UGameplayEffect`是一个纯数据类，不应在其中添加任何的逻
 	在一段时间内有效，它们在应用时开始，并在预定的时间后结束。这期间，效果会持续影响目标。例如，一个增加防御力的持续效果可能在10秒内有效，期间防御力提高，效果结束后防御力恢复正常。持续效果适用于需要临时改变属性的情况；
 	
 3. 周期的（`Periodic`）
-	定期触发的效果。它们在一定周期内重复触发，每次触发都像瞬时效果一样立即发生。周期效果可以用于模拟如每秒恢复生命值这样的效果。周期效果通常有一个开始和结束时间，效果在这段时间内周期性地发生。
+	定期触发的效果。它们在一定周期内重复触发，每次触发都像瞬时效果一样立即发生。周期效果可以用于模拟如每秒恢复生命值这样的效果。周期效果通常有一个开始和结束时间，效果在这段时间内周期性地发生；
 
 # GE实例
 
@@ -161,11 +164,13 @@ UGameplayEffect* CreateMyGameplayEffect()
    - 这个功能允许 `GameplayEffect` 在应用时移除具有特定标签的其他效果。这是一种管理或清理目标上已存在效果的方式，常用于取消或替换效果。
 
 
-# GE中的修改器
+# GE中的修改器 Modifiers
 
 修改器可以改变属性，一个`GameplayEffect`可以有0或多个修改器，每个修改器只负责通过一个指定的操作改变一个属性；
 
-## 修改器操作
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240722012427.png)
+
+## 修改器操作 Modifier Op
 
 修改器的操作有：`Add`，`Multiply`，`Divide`，`Override`；
 其聚合公式在`GameplayEffectAggregator.cpp`中的`FAggregatorModChannel::EvaluateWithBase`定义如下：
@@ -220,7 +225,7 @@ float FAggregatorModChannel::MultiplyMods(const TArray<FAggregatorMod>& InMods, 
 }
 ```
 
-## 修改器幅度类型
+## 修改器幅度类型 Modifier Magnitude
 
 - **Scalable Float**
 	`FScalableFloats` 是一种可以指向数据表的结构，该数据表以变量为行，以等级为列。可缩放浮点数会自动读取指定表格行在能力当前等级（或不同等级，如果在 `GameplayEffectSpec` 中被覆盖）下的值。该值还可以通过系数进一步操作。如果没有指定数据表/行，则会将该值视为 1，因此可以使用系数在所有级别硬编码一个值；
@@ -300,7 +305,7 @@ public:
 };
 ```
 
-## 修改器与标签
+## 修改器标签
 
 每个修改器都可以设置源标签`SourceTags`和目标标签`TargetTags`，这些标签主要起到筛选的作用，在`GameplayEffect`应用时，可以通过`SourceTagFilter`和`TargetTagFilter`来筛选修改器；
 

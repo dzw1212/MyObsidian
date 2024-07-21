@@ -315,7 +315,7 @@ ASC->ApplyGameplayEffectToSelf(DamageEffect, 1.0f, ASC->MakeEffectContext());
 
 比如说衍生属性总防御力=基础防御+装备防御加成+Buff防御加成，公式中的任意属性的修改都会触发衍生属性的重新计算；
 
-复杂的衍生属性的计算逻辑通常会用到[[MMC]]和生效事件为永久的持续性`GameplayEffect`；
+复杂的衍生属性的计算逻辑通常会用到[[修饰符幅度计算 MMC]]和生效事件为永久的持续性`GameplayEffect`；
 
 ### 使用示例
 
