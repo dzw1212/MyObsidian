@@ -157,3 +157,96 @@ int main() {
     return 0;
 }
 ```
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <thread>
+#include <string>
+#include <cstdlib>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+
+void convertTgaToDds(const std::string& tgaFile) {
+    std::string command = "nvdxt.exe -file " + tgaFile + " -dxt1";
+    std::system(command.c_str());
+}
+
+class ThreadPool {
+public:
+    ThreadPool(size_t numThreads);
+    ~ThreadPool();
+    void enqueue(const std::string& tgaFile);
+
+private:
+    std::vector<std::thread> workers;
+    std::queue<std::string> tasks;
+    std::mutex queueMutex;
+    std::condition_variable condition;
+    bool stop;
+
+    void worker();
+};
+
+ThreadPool::ThreadPool(size_t numThreads) : stop(false) {
+    for (size_t i = 0; i < numThreads; ++i) {
+        workers.emplace_back(&ThreadPool::worker, this);
+    }
+}
+
+ThreadPool::~ThreadPool() {
+    {
+        std::unique_lock<std::mutex> lock(queueMutex);
+        stop = true;
+    }
+    condition.notify_all();
+    for (std::thread &worker : workers) {
+        worker.join();
+    }
+}
+
+void ThreadPool::enqueue(const std::string& tgaFile) {
+    {
+        std::unique_lock<std::mutex> lock(queueMutex);
+        tasks.push(tgaFile);
+    }
+    condition.notify_one();
+}
+
+void ThreadPool::worker() {
+    while (true) {
+        std::string task;
+        {
+            std::unique_lock<std::mutex> lock(queueMutex);
+            condition.wait(lock, [this] { return stop || !tasks.empty(); });
+            if (stop && tasks.empty()) {
+                return;
+            }
+            task = tasks.front();
+            tasks.pop();
+        }
+        convertTgaToDds(task);
+    }
+}
+
+int main() {
+    std::vector<std::string> tgaFiles = {
+        "file1.tga", "file2.tga", "file3.tga", // 添加更多文件
+    };
+
+    size_t numThreads = std::thread::hardware_concurrency();
+    if (numThreads == 0) {
+        numThreads = 2; // 如果无法获取核心数，默认使用2个线程
+    }
+
+    ThreadPool pool(numThreads);
+
+    for (const auto& tgaFile : tgaFiles) {
+        pool.enqueue(tgaFile);
+    }
+
+    // 线程池析构时会等待所有任务完成
+    return 0;
+}
+```
