@@ -435,7 +435,62 @@ int main()
 }
 ```
 
-## 总结
+## 查找方法总结
 
 - 对于有序容器，直接使用容器自带的`contains`方法，如果需要获取值则`find`方法；
 - 对于无序容器，如果排序成本不高，推荐排序后再使用`lower_bound`；
+
+# vector优化
+
+## 避免内存再分配
+
+类似字符串一样（其实`c11`之后字符串就是通过`vector`实现的），提前`reverse`容器的空间，能够避免内存再分配+移动元素+释放原空间的性能损耗；
+
+```cpp
+{
+	Stopwatch watcher;
+	std::vector<int> myVec;
+	for (int i = 0; i < 10000; ++i)
+	{
+		myVec.push_back(i);
+	} //执行时间: 1.62ms
+}
+
+{
+	Stopwatch watcher;
+	std::vector<int> myVec;
+	myVec.reserve(10000);
+	for (int i = 0; i < 10000; ++i)
+	{
+		myVec.push_back(i);
+	} //执行时间: 1.2343ms
+}
+```
+
+## 避免中间插入元素
+
+在前端插入元素是低效的，因为需要复制 `vector` 中的所有元素来为新元素腾出空间；
+如果需要在前端插入和删除，请使用`std::deque`或`std::list`；
+
+```cpp	
+{
+	Stopwatch watcher;
+	for (int i = 0; i < 100; ++i)
+		myVec.push_back(100);
+} //执行时间: 0.0154ms
+
+{
+	Stopwatch watcher;
+	for (int i = 0; i < 100; ++i)
+		myVec.insert(myVec.end(), 100);
+} //执行时间: 0.1459ms
+
+{
+	Stopwatch watcher;
+	for (int i = 0; i < 100; ++i)
+		myVec.insert(myVec.begin(), 100);
+} //执行时间: 0.7467ms
+
+```
+
+
