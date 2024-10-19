@@ -4,14 +4,14 @@
 
 # 版本
 
-Mono分为`经典Mono`和`.NET Core Mono`，经典Mono只支持到`C#7`或者说`.NET Framework 4.7.2`，.NET Core Mono则支持最新版本的C#；
+Mono分为`经典Mono`和`.NET Core Mono`，经典Mono只支持到`C#7`或者说`.NET Framework 4.7.2`，`.NET Core Mono`则支持最新版本的C#；
 经典Mono没有被集成到.NET中，但其更简单，也更适合游戏引擎；
 
 ## 为什么不用最新的Mono
 
 最新的.NET Core Mono**不支持汇编重载**；
 游戏引擎对脚本系统的一个要求是——能够在修改脚本后热重载该脚本，而不同重新启动整个编辑器；为了完成这个要求，需要先卸载旧的程序集，再加载新的程序集；
-目前，.NET Core Mono尚不支持重载程序集，而经典Mono可以，因此选择经典Mono来构建脚本系统；
+目前，`.NET Core Mono`尚不支持重载程序集，而经典Mono可以，因此选择经典Mono来构建脚本系统；
 
 # 构建
 
