@@ -136,3 +136,12 @@ int main(void) {
 ```
 
 ![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240301113240.png)
+
+# 设置应用图标
+
+```cpp
+GLFWimage images[1];
+images[0].pixels = stbi_load("./asset/appicon.png", &images[0].width, &images[0].height, 0, 4); // RGBA
+glfwSetWindowIcon(g_Window, 1, images);
+stbi_image_free(images[0].pixels);
+```
