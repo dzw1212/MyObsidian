@@ -1,5 +1,44 @@
 `std::filesystem` 是 C++17 引入的一个库，用于操作文件系统，如创建、删除文件或目录，查询文件属性等。以下是一些基本用法示例：
 
+# 常用接口
+
+```cpp
+对于"D:\\opencv2\\opencv\\README.md.txt"
+
+filename : "README.md.txt"
+extension : ".txt"
+stem : "README.md"
+is_relative : 0
+is_absolute : 1
+relative_path : "opencv2\\opencv\\README.md.txt"
+parent_path : "D:\\opencv2\\opencv"
+root_path : "D:\\"
+root_directory : "\\"
+root_name : "D:"
+remove_filename : "D:\\opencv2\\opencv\\"
+make_preferred : "D:\\opencv2\\opencv\\"
+replace_extension : "D:\\opencv2\\opencv\\"
+replace_filename : "D:\\opencv2\\opencv\\ReplacedFileName"
+
+----------------------------------------------------------------
+对于".\\opencv\\README.md.txt"
+
+filename : "README.md.txt"
+extension : ".txt"
+stem : "README.md"
+is_relative : 1
+is_absolute : 0
+relative_path : ".\\opencv\\README.md.txt"
+parent_path : ".\\opencv"
+root_path : ""
+root_directory : ""
+root_name : ""
+remove_filename : ".\\opencv\\"
+make_preferred : ".\\opencv\\"
+replace_extension : ".\\opencv\\"
+replace_filename : ".\\opencv\\ReplacedFileName"
+```
+
 ### 包含头文件
 要使用 `std::filesystem`，首先需要包含相应的头文件：
 ```cpp
@@ -58,5 +97,3 @@ std::time_t cftime = decltype(ftime)::clock::to_time_t(ftime); // 转换为 std:
 fs::file_time_type newTime = /* 指定时间 */;
 fs::last_write_time("example_file.txt", newTime);
 ```
-
-这些是 `std::filesystem` 的一些基本用法。这个库提供了丰富的功能来处理文件系统相关的任务，可以极大地简化文件和目录的操作。
