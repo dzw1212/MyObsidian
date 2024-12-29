@@ -39,6 +39,12 @@ replace_extension : ".\\opencv\\"
 replace_filename : ".\\opencv\\ReplacedFileName"
 ```
 
+```cpp
+//获取相对目录
+auto relativePath = std::filesystem::relative(TarPath, BasePath);
+```
+
+
 ### 包含头文件
 要使用 `std::filesystem`，首先需要包含相应的头文件：
 ```cpp

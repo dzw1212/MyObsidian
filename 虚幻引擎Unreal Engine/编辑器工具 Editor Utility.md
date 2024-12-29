@@ -448,3 +448,105 @@ Step3、`AddMenuEntry`时执行`SlateStyleSet`与图标名；
 
 # 自定义编辑器快捷键
 
+## 初始化
+
+新建一个类，继承自`TCommands`：
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241219013914.png)
+
+
+参考以下形式初始化`FTestManagerUICOmmands`：
+![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241219013756.png)
+
+`TCommands`中提供了注册与取消注册的接口，需要在`StartModule`和`ShutdownModule`时调用：
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241219020132.png)
+
+![900](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241219020155.png)
+
+![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241219020227.png)
+
+## 注册快捷键
+
+![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241219021300.png)
+
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241219020607.png)
+
+可以在编辑器中看到新增的快捷键：
+
+![900](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241219020849.png)
+
+
+## 绑定功能函数
+
+![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241219025356.png)
+
+![750](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241219025428.png)
+
+添加快捷键到关卡编辑器：
+![900](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241219022636.png)
+
+# 拓展大纲视图
+
+在世界大纲视图`World Outliner`上新增一列，用来表示物体的`Selection Lock`状态；
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241219030217.png)
+
+## 新增列并设定图标
+
+![1100](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241222165417.png)
+
+![900](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241222165503.png)
+
+然后在`TestManage`的`StartupModule`中注册该`HeaderRow`：
+
+![900](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241222165624.png)
+
+![380](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241222165654.png)
+
+然后在界面中可以看到：
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241222165312.png)
+
+
+## 构建RowWidget
+
+![900](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241222181237.png)
+
+![900](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241222181252.png)
+
+
+## 刷新CheckBox状态
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241222181151.png)
+
+![900](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241222181100.png)
+
+## 设置CheckBox类型为ToggleButton
+
+创建一个`CheckBoxStyle`：
+
+![900](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241222185038.png)
+
+![1100](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241222185127.png)
+
+效果如下：
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241222185151.png)
+
+
+# 打包插件
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241222190900.png)
+
+打包后，删除导出目录下的二进制与中间文件夹，以触发重新编译：
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241222193300.png)
+
+然后将该文件夹放入其他工程的`Plugins`目录下，然后`rebuild`，即可完成对该插件的离线加载；
+
+## 打包失败
+
+![900](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241222191508.png)
+
+如果一个函数为蓝图可用，则需要指定`Category`；
+

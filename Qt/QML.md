@@ -1,0 +1,207 @@
+# 属性 Property
+
+## 声明自定义属性
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229205741.png)
+
+
+# 鼠标区域 MouseArea
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229183151.png)
+
+## 拖拽
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229181559.png)
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/drag.gif)
+
+## 鼠标事件传递
+
+当`MouseArea`重叠时，需要考虑重叠区域的事件是否传递；
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229182939.png)
+
+# 按钮 Button
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229185738.png)
+
+`background`可以自定义按钮的背景显示，如果需要改变字体、绘制自定义大小的背景图片等，需要用到`contentItem`属性；
+
+## 勾选框CheckBox
+
+![350](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229211032.png)
+
+通过`nextCheckState`可以控制点击时状态的切换顺序，默认是`unchecked -> particalChecked -> checked`：
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229213105.png)
+
+
+## 按钮分组 ButtonGroup
+
+通过`ButtonGroup`还可以实现分层功能，当`ButtonGroup`中的所有`Button`的`checked`状态都是`true`时，该`ButtonGroup`才是`checked`的；
+
+![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229212511.png)
+
+![100](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229212407.png)
+
+## 延迟按钮 DelayButton
+
+持续按住之后会累计进度；
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229213555.png)
+
+## 点选框 RadioButton
+
+天生排他；
+
+
+
+![100](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229213736.png)
+
+
+## 切换按钮 Switch
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229214528.png)
+
+![150](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229214547.png)
+
+## 表格按钮 TabButton
+
+常用于菜单栏，天生排他；
+
+![250](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229214845.png)
+
+![150](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229214829.png)
+
+## 圆角按钮 RoundButton
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229215116.png)
+
+![50](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229215058.png)
+
+# 文本 Text
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229221513.png)
+
+## 文本样式 textFormat
+
+支持富文本`Richtext`、`Markdown`、`CSS`等格式；
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229221339.png)
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229221324.png)
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229221641.png)
+
+## 换行方式 wrapMode
+
+![1100](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229221829.png)
+
+## 超链接
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229222229.png)
+
+![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229222212.png)
+
+
+# 动画 Animation
+## 触发
+### 调用触发
+
+![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229152444.png)
+
+### 立即触发
+
+![250](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229153123.png)
+
+## 动画组合 SequentialAnimation
+
+按顺序依次播放；
+
+![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229153945.png)
+
+
+# 状态 State与切换 Transition
+
+`states`设置多种状态；
+
+![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229150447.png)
+
+`transitions`描述切换过程；
+
+![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229155321.png)
+
+# 组件Component与加载Loader
+
+控件中会自带一个默认`Component`，一般通过以下方法使用：
+
+![250](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229160246.png)
+
+此外还可以自定义`Component`，需要通过`Loader`进行加载；
+==将控件封装进`Component`中，方便动态创建或销魂==；
+
+![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229160948.png)
+
+可以通过`Loader`对`Component`中的控件进行管理，比如修改属性、销毁等；
+
+![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229161704.png)
+
+
+`Loader`中可以设置异步加载，并通过`Status`属性判断加载是否完成；
+
+![380](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229162441.png)
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229162255.png)
+
+# 图片 Image
+
+## 加载
+
+QML中使用图片，需要新建一个qrc文件，通过该文件来管理图片等资源；
+
+![360](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229171650.png)
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229171710.png)
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229171730.png)
+
+此外还需要修改CMakeList文件：
+
+![350](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229171832.png)
+
+## 静态图片 Image
+
+![350](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229172128.png)
+
+## 动态图片 AnimatedImage
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229172408.png)
+
+控制播放速度与暂停：
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229173334.png)
+
+
+# 弹窗 Popup
+
+`Popup`在形式上类似`Rectangle`，但是有几个不同于普通`Rectangle`的特点：
+1. 初始默认`visible`为`false`；
+2. 对于`Popup`，即使其父控件的`visible`是`false`，只要自身的`visible`为`true`，就能显示出来；
+3. `Popup`相对于其他普通控件的层级总是在最上层；`Popup`之间，即使是后绘制的也会在下面的层级，但是可以用`z`属性设置层级关系；
+4. `Popup`失去焦点后会自动隐藏（默认`closePolicy`）；
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241230021909.png)
+
+
+`open`显示弹窗：
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241230021231.png)
+
+`close`关闭弹窗：
+
+![350](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241230021312.png)
+
+## 模态/非模态遮罩
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241230022639.png)
+
