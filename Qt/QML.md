@@ -4,10 +4,30 @@
 
 ![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229205741.png)
 
+# 焦点 focus
+
+继承自底层控件`Control`的控件拥有焦点相关的功能；
+
+`focusPolicy`控制如何获取焦点：
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241231014348.png)
+
+`focusReason`描述是如何获取/失去焦点的：
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241231014547.png)
+
+## 活动焦点 activeFocus
+
+一般来说拥有焦点的控件只有一个，如果多个控件初始的`focus: true`，则后构造的控件会拥有焦点；
+
+然而有一种控件名为`FocusScope`，其允许其子控件不独占焦点，会出现多个控件`focus`的情况，此时就需要活动焦点`activeFocus`来判断究竟哪个控件真正拥有焦点；
+
+![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241231020101.png)
+
 
 # 鼠标区域 MouseArea
 
-![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229183151.png)
+![550](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229183151.png)
 
 ## 拖拽
 
@@ -205,3 +225,53 @@ QML中使用图片，需要新建一个qrc文件，通过该文件来管理图�
 
 ![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241230022639.png)
 
+# 重复器 Repeater
+
+![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241230202716.png)
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241230202808.png)
+
+
+# 列表 ListView
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241230232004.png)
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241230232036.png)
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241230232112.png)
+
+列表选项拖动行为`interactive`与`boundsBehavior`：
+
+![550](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241231013443.png)
+
+
+# 组合框 ComboBox
+
+最基础的形式：
+
+![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241230232829.png)
+
+![100](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241230232806.png)
+
+可编辑选项`editable`：
+
+![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241230233926.png)
+
+`Index/Value/Text`：
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241230235418.png)
+
+限制输入类型`validator`与`acceptableInput`：
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241231010519.png)
+
+## 自定义绘制
+
+下拉按键 `indicator`：
+
+![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241231011459.png)
+
+![200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241231011446.png)
+
+
+此外还有显示框的背景`background`、显示框的文本`contentItem`、下拉框中的每一项`delegate`、整个下拉框`popup`；
