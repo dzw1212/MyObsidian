@@ -24,6 +24,16 @@
 
 ![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241231020101.png)
 
+# 信号 signal
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241231234634.png)
+
+可以通过`Component`和`Loader`为同一个信号绑定不同的`Handler`：
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250101162318.png)
+
+![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250101162339.png)
+
 
 # 鼠标区域 MouseArea
 
