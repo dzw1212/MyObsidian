@@ -34,6 +34,71 @@
 
 ![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250101162339.png)
 
+# 与C++交互
+
+## QML可访问的全局变量
+
+设置之后，所有的QML均可访问到该变量：
+
+![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250101170436.png)
+
+![250](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250101170643.png)
+## QObject类
+
+有一种特殊的对象`QtObject`，使用它可以将`property`设为私有：
+
+![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250101171653.png)
+
+
+![650](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250101171626.png)
+
+`QtObject`继承自`QObject`，可以自定义cpp类继承自`QObject`，实现类似`QtObject`的功能；
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250101171956.png)
+
+对于新增的成员变量和函数，可以移动光标并按下`Alt+Enter`，会出现一些选项：
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250101172929.png)
+
+IDE会自动生成一些函数：
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250101173327.png)
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250101173449.png)
+
+## QML中注册cpp类
+
+*ps：以下方法基于`QT 6.8`，之前的注册方法如`qmlRegisterType`已被废弃；*
+
+前提是派生自`QObject`的类；
+
+### 可实例化的类
+
+首先需要添加`QML_ELEMENT`宏；
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250101213653.png)
+
+然后QML直接使用即可：
+
+![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250101213754.png)
+
+### 不可实例化的类
+
+
+## 信号与槽函数
+
+1. QML发送信号，CPP接收并处理；
+
+![350](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250101214543.png)
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250101214506.png)
+
+2. CPP发送信号，QML接收并处理；
+
+
+
+
+
 
 # 鼠标区域 MouseArea
 
@@ -231,7 +296,7 @@ QML中使用图片，需要新建一个qrc文件，通过该文件来管理图�
 
 ![350](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241230021312.png)
 
-## 模态/非模态遮罩
+## 模态 Modal/非模态 Modeless遮罩 Overlay
 
 ![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241230022639.png)
 
@@ -284,4 +349,4 @@ QML中使用图片，需要新建一个qrc文件，通过该文件来管理图�
 ![200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241231011446.png)
 
 
-此外还有显示框的背景`background`、显示框的文本`contentItem`、下拉框中的每一项`delegate`、整个下拉框`popup`；
+此外还可以自定义显示框的背景`background`、显示框的文本`contentItem`、下拉框中的每一项`delegate`、整个下拉框`popup`；
