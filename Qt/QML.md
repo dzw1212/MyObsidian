@@ -225,9 +225,17 @@ IDE会自动生成一些函数：
 
 ![250](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250102033016.png)
 
+
+## 特效
+
+### 发射器 Emitter
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250103014959.png)
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/emitter.gif)
+
+
 # 控件
-
-
 ## 按钮 Button
 
 ![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229185738.png)
@@ -369,7 +377,7 @@ QML中使用图片，需要新建一个qrc文件，通过该文件来管理图�
 
 ![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241230202808.png)
 
-## 获取子元素
+### 获取子元素
 
 `itemAt(index)`
 
@@ -388,13 +396,25 @@ QML中使用图片，需要新建一个qrc文件，通过该文件来管理图�
 ![550](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241231013443.png)
 
 
-## 获取子元素
+### 获取子元素
 
 `children`中还包含`contenItem`自身；
 
 ![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250102030602.png)
 
 ![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250102030625.png)
+
+### 使用ObjectModel
+
+`ObjectModel`可以看作一个控件容器，里面可以收纳各种控件，然后配合`ListView`进行显示；
+
+以下使用`ObjectModel`实现一个类似[[QML#滑动窗口 SwipeView]]、同时左侧常驻一个按钮的效果：
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250103010555.png)
+
+![350](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250103010634.png)
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/listview.gif)
 
 ## 组合框 ComboBox
 
@@ -416,7 +436,7 @@ QML中使用图片，需要新建一个qrc文件，通过该文件来管理图�
 
 ![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241231010519.png)
 
-## 自定义绘制
+### 自定义绘制
 
 下拉按键 `indicator`：
 
@@ -426,4 +446,12 @@ QML中使用图片，需要新建一个qrc文件，通过该文件来管理图�
 
 
 此外还可以自定义显示框的背景`background`、显示框的文本`contentItem`、下拉框中的每一项`delegate`、整个下拉框`popup`；
+
+## 滑动窗口 SwipeView
+
+![350](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250103001122.png)
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250103001139.png)
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/swipe.gif)
 
