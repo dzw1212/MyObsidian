@@ -1,4 +1,3 @@
-
 # 机制
 ## 属性 Property
 
@@ -235,10 +234,35 @@ IDE会自动生成一些函数：
 ![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/emitter.gif)
 
 
+### 吸引力 Attractor
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250104181248.png)
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/attractor.gif)
+
+
+## 指示器
+
+### 页面指示器 PageIndicator
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250104183512.png)
+
+![50](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250104183533.png)
+
+### 繁忙指示器 BusyIndicator
+
+![250](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250104182857.png)
+
+![100](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250104182835.png)
+
+## 文件夹遍历器 FolderListModel
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250104185453.png)
+
 # 控件
 ## 按钮 Button
 
-![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229185738.png)
+![550](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20241229185738.png)
 
 `background`可以自定义按钮的背景显示，如果需要改变字体、绘制自定义大小的背景图片等，需要用到`contentItem`属性；
 
@@ -455,3 +479,97 @@ QML中使用图片，需要新建一个qrc文件，通过该文件来管理图�
 
 ![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/swipe.gif)
 
+
+
+# Demo
+
+```qml
+Rectangle {
+	id: videoRect
+	width: 200; height: 200
+	border.width: 1
+	border.color: focus ? "black" : "transparent"
+	color: focus ? "gray" : "transparent"
+	Video {
+		id: videoPlayer
+		anchors.fill: parent
+		source: "file:///D:\\迅雷下载\\未麻的部屋BD1080P高清日语中字.mp4"
+		autoPlay: true
+		fillMode: VideoOutput.PreserveAspectFit
+		muted: true
+
+		property bool bFirstEnter: true
+		property int thumbnailPreviewMS: 5000 //封面截取瞬间
+		property int previewSegment: 4 //分段数
+		property int durationSpan: duration / (previewSegment + 1)
+
+		onBufferProgressChanged: {
+			if (bufferProgress == 1)
+			{
+				if (thumbnailPreviewMS > duration)
+					thumbnailPreviewMS = duration
+
+				if (bFirstEnter)
+					position = thumbnailPreviewMS
+			}
+		}
+
+		onPositionChanged: {
+			if (bFirstEnter && position > (thumbnailPreviewMS + 200))
+				pause()
+			if (position == duration)
+			{
+				pause()
+				previewTimer.stop()
+			}
+		}
+
+		function beginPreview()
+		{
+			videoPlayer.bFirstEnter = false
+			previewTimer.restart()
+			play()
+		}
+
+		function endPreview()
+		{
+			videoPlayer.bFirstEnter = true
+			previewTimer.stop()
+			position = thumbnailPreviewMS
+			pause()
+		}
+	}
+	MouseArea {
+		anchors.fill: parent
+		hoverEnabled: true
+		onHoveredChanged: {
+			if (containsMouse)
+			{
+				videoRect.color = "gray"
+				videoPlayer.beginPreview()
+			}
+			else
+			{
+				if (!videoRect.focus)
+					videoRect.color = "transparent"
+				videoPlayer.endPreview()
+			}
+		}
+		onPressed: {
+			videoRect.focus = true
+		}
+		onDoubleClicked: {
+
+		}
+	}
+	Timer {
+		id: previewTimer
+		repeat: true
+		interval: 3000
+		running: false
+		onTriggered: {
+			videoPlayer.position += videoPlayer.durationSpan
+		}
+	}
+}
+```
