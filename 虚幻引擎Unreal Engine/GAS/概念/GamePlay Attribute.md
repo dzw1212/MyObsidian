@@ -1,4 +1,6 @@
-在`GAS`中，`GameplayAttribute`是一个由结构体`FGameplayAttributeData`定义的浮点数值，用于表示、存储和管理游戏中角色或对象的各种属性（如生命值、法力值、速度等）。这些属性是游戏逻辑和游戏玩法中不可或缺的部分，它们可以被修改和查询（一般建议只由`Gameplay Effect`进行修改，以方便`ASC`预测变化），以支持复杂的游戏能力、效果和交互。
+在`GAS`中，`Gameplay Attributes`是一个由结构体`FGameplayAttributeData`定义的浮点数值，用于表示、存储和管理游戏中角色或对象的各种属性（如生命值、法力值、速度等）。这些属性是游戏逻辑和游戏玩法中不可或缺的部分，它们可以被修改和查询（一般建议只由`Gameplay Effect`进行修改，以方便`ASC`预测变化），以支持复杂的游戏能力、效果和交互。
+
+*提示：如果你不希望某个属性出现在编辑器的属性列表中，可以使用 Meta = (HideInDetailsView) 属性指定符*
 
 # 核心特点
 
@@ -9,22 +11,22 @@
 
 # 基础值与当前值
 
-一个属性值由`BaseValue`和`CurrentValue`构成：
-- 基础值：初始值；
-- 当前值：由`Gameplay Effect`修改的临时值；
+一个属性由两个值组成——`BaseValue`（基础值）和 `CurrentValue`（当前值）。`BaseValue` 是属性的永久值，而 `CurrentValue` 是 `BaseValue` 加上来自 `GameplayEffects` 的临时修改。
+
+例如，你的角色可能有一个移动速度属性，`BaseValue` 为 600 单位/秒。由于还没有 `GameplayEffects` 修改移动速度，`CurrentValue` 也是 600 单位/秒。如果她获得一个临时的 50 单位/秒的移动速度增益，`BaseValue` 保持不变为 600 单位/秒，而 `CurrentValue` 现在是 600 + 50，总共 650 单位/秒。当移动速度增益消失时，`CurrentValue` 恢复到 `BaseValue` 的 600 单位/秒。
 
 ## GameplayEffect与属性值的修改
 
 [[Gameplay Effect#分类]]
 
-- 瞬时性和周期性的`Gameplay Effect`一般修改基础值；
-- 持续性的`Gameplay Effect`一般修改当前值；
+- 瞬时性 *Instant* 和周期性 *Duration* 的`Gameplay Effect`一般修改基础值；
+- 持续性 *Infinite* 的`Gameplay Effect`一般修改当前值；
 
 # 使用属性
 
 ## 定义属性
 
-属性只能在C++中定义；
+属性只能在C++中、对应属性集的头文件中定义；
 
 建议在每个属性集的头文件顶部添加以下的宏：
 ```cpp
@@ -68,6 +70,7 @@ void UGDAttributeSetBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 }
 ```
 
+如果是元属性这样不需要复制的，则无需`OnRep`与`GetLifetimeReplicatedProps`；
 ### Getter与Setter宏
 
 使用宏来定义`GameplayAttribute`的`getter`和`setter`方法是一种简化代码和提高可维护性的技术。这些宏背后的原理是预处理器指令，它们在编译时会展开成实际的代码，从而减少了手动编写重复代码的需要。
@@ -135,13 +138,30 @@ GAMEPLAYATTRIBUTE_VALUE_INITTER(AttributeName)
 
 ## 初始化属性
 
-初始化一个属性有多种方法，推荐使用一个瞬时的`GameplayEffect`来完成该操作；
+初始化一个属性有多种方法，`UE`推荐使用一个瞬时的`GameplayEffect`来完成该操作；
 
-如果在定义属性时使用了`GAMEPLAYATTRIBUTE_VALUE_INITTER`，则会为属性自动生成一个初始化函数，可以手动调用：
 ```cpp
-AttributeSet->InitHealth(100.0f);
-```
+void AMyCharacter::InitializeAttributes()
+{
+    if (AbilitySystemComponent)
+    {
+        // Load the GameplayEffect class
+        static ConstructorHelpers::FObjectFinder<UGameplayEffect> GE_InitializeAttributes(TEXT("/Game/Path/To/GE_InitializeAttributes.GE_InitializeAttributes"));
+        
+        if (GE_InitializeAttributes.Succeeded())
+        {
+            FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
+            EffectContext.AddSourceObject(this);
 
+            FGameplayEffectSpecHandle NewHandle = AbilitySystemComponent->MakeOutgoingSpec(GE_InitializeAttributes.Object, 1, EffectContext);
+            if (NewHandle.IsValid())
+            {
+                AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*NewHandle.Data.Get());
+            }
+        }
+    }
+}
+```
 ## 属性修改预处理
 
 可以使用`PreAttributeChange`对属性的修改进行预处理，其传入`NewValue`的引用，一般会在该函数中对值进行`clamp`处理；
@@ -154,10 +174,10 @@ void UYourAbilitySystemComponent::PreAttributeChange(const FGameplayAttribute& A
 	Super::PreAttributeChange(Attribute, NewValue);
 
     // 检查是否是我们关心的属性，例如“Health”
-    if (Attribute == HealthAttribute())
+    if (Attribute == GetHealthAttribute()) //由宏创建
     {
         // 将新的健康值限制在一个特定的范围内，比如100到1000
-        NewValue = FMath::Clamp(NewValue, 100.0f, 1000.0f);
+        NewValue = FMath::Clamp<float>(NewValue, 100.0f, 1000.0f);
     }
 }
 ```
@@ -243,6 +263,8 @@ virtual void HealthChanged(const FOnAttributeChangeData& Data);
 
 假设有一个属性叫做`Health`（生命值），还有一个元属性叫做`HealthRegenerationRate`（生命恢复速率）。在这里，`Health`是一个普通属性，直接影响角色的生命值状态；而`HealthRegenerationRate`是一个元属性，它用来确定`Health`每秒恢复的量，但它自身并不直接表现为角色的具体生命值；
 
+元属性为诸如伤害和治疗之类的事情提供了良好的逻辑分离，区分了“我们造成了多少伤害？”和“我们如何处理这些伤害？”。这种逻辑分离意味着我们的 `Gameplay Effects` 和执行计算不需要知道目标如何处理伤害。`Gameplay Effect` 确定伤害量，然后 `AttributeSet` 决定如何处理该伤害。并不是所有角色都可能具有相同的属性，特别是如果你使用子类化的 `AttributeSets`。基础 `AttributeSet` 类可能只有一个生命值属性，但子类化的 `AttributeSet` 可能会添加一个护盾属性。具有护盾属性的子类化 `AttributeSet` 会与基础 `AttributeSet` 类不同地分配所受的伤害。
+
 元属性通常不会被复制，其没有持久性，会被每个`Gameplay Effect`所覆盖；
 
 元属性并不是必要的，但它有如下几个优点：
@@ -309,13 +331,15 @@ DamageEffect->Modifiers.Add(HealthModifier);
 UAbilitySystemComponent* ASC = ...; // 获取目标的AbilitySystemComponent
 ASC->ApplyGameplayEffectToSelf(DamageEffect, 1.0f, ASC->MakeEffectContext());
 ```
-## 衍生属性
+## 派生属性
 
-衍生属性（`Derived Attribute`）是一种特殊的`GameplayAttribute`，它们的值是基于一个或多个其他属性（基础属性）计算得出的。这与普通的属性不同，后者的值通常直接设定或通过游戏事件直接修改；
+派生属性（`Derived Attribute`）是一种特殊的`GameplayAttribute`，它们的值是基于一个或多个其他属性（基础属性）计算得出的。这与普通的属性不同，后者的值通常直接设定或通过游戏事件直接修改；
+
+可以使用*Infinite*类型的`GameplayEffect`，和[[修饰符幅度计算 MMC]]来创建派生属性；
 
 比如说衍生属性总防御力=基础防御+装备防御加成+Buff防御加成，公式中的任意属性的修改都会触发衍生属性的重新计算；
 
-复杂的衍生属性的计算逻辑通常会用到[[修饰符幅度计算 MMC]]和生效事件为永久的持续性`GameplayEffect`；
+*注意：如果在PIE（Play In Editor）中使用多个客户端，需要在编辑器首选项中禁用“Run Under One Process”，否则派生属性在第一个客户端之外的其他客户端上，其独立属性更新时不会更新；*
 
 ### 使用示例
 
@@ -396,6 +420,14 @@ Effect->Modifiers.Add(ModifierInfo);
 ```cpp
 UAttributeSet* MyAttributeSet = MyAbilitySystemComponent->GetAttributeSet<UAttributeSet>();
 ```
+
+## 属性集设计
+
+一个`ASC`可以拥有一个或多个属性集。属性集的内存开销可以忽略不计，因此使用多少个属性集取决于用户的设计；
+
+可以在游戏中为每个`Actor`共享一个大型的单一属性集，并根据需要使用属性，同时忽略未使用的属性；也可以选择拥有多个属性集，代表属性的分组，并根据需要选择性地添加到您的`Actors`中。例如，您可以有一个用于健康相关属性的属性集，一个用于法力相关属性的属性集，等等。在MOBA游戏中，英雄可能需要法力，但小兵可能不需要。因此，英雄会获得法力属性集，而小兵则不会；
+
+**虽然可以拥有多个属性集，但不应在一个`ASC`上拥有多个相同类的属性集**。如果有多个来自相同类的属性集，系统将不知道使用哪个属性集，并且只会选择一个；
 ## 运行时添加和移除
 
 ```cpp
@@ -412,8 +444,24 @@ AbilitySystemComponent->ForceReplication();
 
 # 物品属性
 
-指带有属性的可装备物品，比如武器弹药量、护甲耐久值等；
-## 直接使用浮点数存储
+有几种方法可以实现带有属性（武器弹药、护甲耐久度等）的可装备物品。所有这些方法都是直接在物品上存储数值。这对于在其生命周期内可被多个玩家装备的物品来说是必要的。
+
+与其使用属性，不如在物品类实例上存储普通的浮点值。`Fortnite`和`GASShooter`就是这样处理枪支弹药的。对于一把枪，直接在枪实例上存储最大弹夹容量、当前弹夹中的弹药、备用弹药等为可复制的浮点数（`COND_OwnerOnly`）。如果武器共享备用弹药，您可以将备用弹药作为属性移动到角色上，并放在一个共享弹药的属性集中（重新装填能力可以使用一个`Cost GE`从备用弹药中提取到枪的浮点弹夹弹药中）。由于您没有使用属性来表示当前弹夹弹药，您需要重写`UGameplayAbility`中的一些函数，以检查和应用对枪上浮点数的消耗。将枪作为`GameplayAbilitySpec`中的`SourceObject`，在授予能力时意味着您可以在能力内部访问授予能力的枪。
+
+为了防止枪在自动射击时复制回弹药量并覆盖本地弹药量，在`PreReplication()`中禁用复制，当玩家有`IsFiring`的`GameplayTag`时：
+```cpp
+void AGSWeapon::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker)
+{
+    Super::PreReplication(ChangedPropertyTracker);
+
+    DOREPLIFETIME_ACTIVE_OVERRIDE(AGSWeapon, PrimaryClipAmmo, (IsValid(AbilitySystemComponent) && !AbilitySystemComponent->HasMatchingGameplayTag(WeaponIsFiringTag)));
+    
+    DOREPLIFETIME_ACTIVE_OVERRIDE(AGSWeapon, SecondaryClipAmmo, (IsValid(AbilitySystemComponent) && !AbilitySystemComponent->HasMatchingGameplayTag(WeaponIsFiringTag)));
+}
+```
+
+
+
 
 # 实现方式
 

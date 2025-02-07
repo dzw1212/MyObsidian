@@ -18,11 +18,15 @@
 
 `FGameplayTagContainer`中可以存储多个`FGameplayTag`，这种做法比使用数组来管理标签更为高效（如`TArray<FGameplayTag>`）；如果项目设置中启用了`Fast Replication`功能，`FGameplayTagContainer`就能更高效地打包和复制标签，这有利于服务器与客户端之间的标签同步；
 
+`Fast Replication`要求服务器和客户端拥有相同的 `GameplayTags` 列表，这一般不会有什么问题，所以如果没有特殊原因都应该启用这个选项；
+
+存储在 `FGameplayTagCountContainer` 中的 `GameplayTag` 有一个 `TagMap`，其中存储了该 `GameplayTag` 的所有实例数量。任何 `HasTag()` 或 `HasMatchingTag()` 或类似函数都会检查 `TagMapCount`，如果 `GameplayTag` 不存在或其 `TagMapCount` 为零，则返回 false。
+
 ## 标签的同步
 
 如果一个标签是通过`Gameplay Effect`添加的，那它会自动被复制并同步给所有客户端；
 
-如果你想手动管理标签的同步，可以使用`LooseGameplayTags`，这种标签不会被复制；
+如果你想手动管理标签的同步，可以使用`LooseGameplayTags`，这种标签不会被复制；比如一个名为`State.Dead`的标签，在角色死亡时添加，在角色重生时手动将该标签的`TagMapCount`设为0；但是最好使用 `UAbilitySystemComponent::AddLooseGameplayTag()` 和 `UAbilitySystemComponent::RemoveLooseGameplayTag()` 函数，而不是手动调整 `TagMapCount`。
 
 ## 获取标签
 
@@ -31,7 +35,7 @@
 FGameplayTag::RequestGameplayTag(FName("Your.GameplayTag.Name"))
 ```
 
-获取标签的父级或子级（需要用到`GameplayTagManager`）：
+获取标签的父级或子级（需要用到`GameplayTagManager`，包含`GameplayTagManager.h` 并使用 `UGameplayTagManager::Get().FunctionName` 来调用其中的接口）：
 ```cpp
 //获取父标签
 TArray<FGameplayTag> ParentTags;
@@ -45,7 +49,7 @@ TagManager.RequestGameplayTagChildren(ParentTag, ChildTags);
 
 ## 标签事件
 
-`ASC`可以通过`RegisterGameplayTagEvent`指定标签发生更改时的回调函数，并且通过`EGameplayTagEventType`来筛选标签事件类型；
+`ASC`可以通过`RegisterGameplayTagEvent`指定标签发生更改时的回调函数，并且通过`EGameplayTagEventType`来筛选标签事件类型，指定只在添加/删除标签或标签的 `TagMapCount` 发生变化时触发；
 
 ```cpp
 #include "GameplayTagContainer.h"
@@ -99,3 +103,24 @@ void UMyClass::OnTagChanged(const FGameplayTag Tag, int32 NewCount)
 除了手动编辑`DefaultGameplayTags.ini`文件外，UE的编辑器也提供了一个可视化的`Gameplay Tag`编辑器，允许你在不直接编辑配置文件的情况下管理标签。你可以在编辑器中通过导航到`Edit` -> `Project Settings` -> `Gameplay Tags`来访问和配置这些标签。
 
 通过使用`Gameplay Tag`编辑器，你可以更加直观地添加、编辑和组织你的标签，同时也可以查看和管理标签的层次结构。编辑器中的改动会自动更新到`DefaultGameplayTags.ini`文件中，确保了配置的一致性和可追踪性。
+
+# 模块化的标签INI文件
+
+如果你创建了一个包含自己 .ini 文件的插件，并且这些文件中包含 `GameplayTags`，你可以在插件的 `StartupModule()` 函数中加载该插件的 `GameplayTag` .ini 目录。
+
+例如，虚幻引擎附带的 `CommonConversation` 插件是这样做的：
+
+```cpp
+void FCommonConversationRuntimeModule::StartupModule()
+{
+    TSharedPtr<IPlugin> ThisPlugin = IPluginManager::Get().FindPlugin(TEXT("CommonConversation"));
+    check(ThisPlugin.IsValid());
+    
+    UGameplayTagsManager::Get().AddTagIniSearchPath(ThisPlugin->GetBaseDir() / TEXT("Config") / TEXT("Tags"));
+
+    //...
+}
+```
+
+如果插件启用，这将查找目录 `Plugins\CommonConversation\Config\Tags`，并在引擎启动时将其中任何包含 `GameplayTags` 的 .ini 文件加载到你的项目中。
+
