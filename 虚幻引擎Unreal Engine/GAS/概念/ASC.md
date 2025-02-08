@@ -1,22 +1,12 @@
-在`GAS`中，`AbilitySystemComponent`是一个核心组件，它是整个系统运作的基础。这个组件负责管理和执行与角色相关的各种游戏能力（`Gameplay Abilities`），以及处理状态效果（`Gameplay Effects`）和属性（`Attributes`）。
+`AbilitySystemComponent`（`ASC`）是游戏能力系统（`GAS`）的核心。它是一个 `UActorComponent`（`UAbilitySystemComponent`），负责处理与系统的所有交互。任何希望使用 `GameplayAbilities`（游戏能力）、拥有 `Attributes`（属性）或接收 `GameplayEffects`（游戏效果）的 `Actor` 都必须附加一个 `ASC`。这些对象都存在于 `ASC` 内部，并由其管理和复制（**除了 `Attributes`，它们由其 `AttributeSet` 复制**）。
 
-`ASC`负责处理所有交互相关的功能，任何想要使用`GA`、拥有`Attribute`或者希望能接收`GE`的`Actor`都需要拥有`ASC`；
+开发者可以选择（但不强制）对其进行子类化。
 
-一般来说，开发者可以创建`ASC`的子类（但不强制）；
+附加了 `ASC` 的 `Actor` 被称为 `ASC` 的 `OwnerActor`。`ASC` 的物理表现 `Actor` 被称为 `AvatarActor`。`OwnerActor` 和 `AvatarActor` 可以是同一个 `Actor`，例如在 MOBA 游戏中的简单 AI 小兵。它们也可以是不同的 `Actor`，例如在 MOBA 游戏中由玩家控制的英雄，其中 `OwnerActor` 是 `PlayerState`，而 `AvatarActor` 是英雄的 `Character` 类。大多数 `Actor` 会在自身上附加 `ASC`。如果你的 `Actor` 会重生并需要在重生之间保持 `Attributes` 或 `GameplayEffects` 的持久性（如 MOBA 中的英雄），那么 `ASC` 的理想位置是在 `PlayerState` 上。
 
-# 主要功能
+*注意：如果你的 ASC 在 PlayerState 上，那么你需要增加 PlayerState 的 NetUpdateFrequency。它在 PlayerState 上的默认值非常低，可能会导致在客户端上发生 Attributes 和 GameplayTags 更改时出现延迟或感知到的滞后。确保启用自适应网络更新频率*
 
-- **管理游戏技能（Gameplay Abilities）**：`AbilitySystemComponent`负责激活、执行和终止游戏能力。它处理能力的冷却时间、成本和条件判断（例如，一个角色是否有足够的资源来使用某个能力）。
-
-- **处理状态效果（Gameplay Effects）**：这些效果可以修改角色的属性值，如生命值、能量等。`AbilitySystemComponent`负责应用、追踪和移除这些效果。
-
-- **属性管理**：它使用`AttributeSet`类来定义和存储角色的属性（例如，生命值、力量、敏捷等）。这些属性可以被游戏能力和状态效果读取和修改。
-
-- **事件和代理**：`AbilitySystemComponent`提供了一套事件系统和代理（Delegates），允许游戏能力和其他系统在特定事件发生时响应，如属性变化、能力激活等。
-
-# 实现方式
-
-在游戏项目中，通常会在需要使用`GAS`的角色（如玩家角色或AI）上附加`AbilitySystemComponent`。然后，通过在这个组件上注册`AttributeSets`和定义的游戏能力，来为角色配置其能力和属性。
+如果 `OwnerActor` 和 `AvatarActor` 是不同的 `Actor`，则它们都应该实现 `IAbilitySystemInterface`。此接口有一个必须重写的函数 `UAbilitySystemComponent* GetAbilitySystemComponent() const`，它返回指向其 `ASC` 的指针。`ASC` 通过查找此接口函数在系统内部相互交互。
 
 # 示例
 
@@ -60,7 +50,7 @@ UAbilitySystemComponent* AMyCharacter::GetAbilitySystemComponent() const
 
 - **AvatarActor**：是指实际执行能力（如施放技能、应用效果等）的实体。在许多情况下，`AvatarActor`和`OwnerActor`是同一个实体。然而，在某些情况下，它们可能会不同，比如当一个玩家控制一个召唤物或者是远程控制一个单位时，`OwnerActor`是玩家角色，而`AvatarActor`则是召唤物或远程控制的单位。这种区分允许系统灵活地处理能力的执行者和能力的所有者之间的关系。
 
-如果`OwnerActor`和`AvatarActor`是不同的`Actor`，那么这两个`Actor``都应该实现IAbilitySystemInterface`。该接口有一个必须重载的函数，即 `UAbilitySystemComponent* GetAbilitySystemComponent() const`，它返回一个指向其 `ASC` 的指针，`ASC`通过查找该接口函数在系统内部进行交互。
+如果`OwnerActor`和`AvatarActor`是不同的`Actor`，那么这两个`Actor`都应该实现`IAbilitySystemInterface`。该接口有一个必须重载的函数，即 `UAbilitySystemComponent* GetAbilitySystemComponent() const`，它返回一个指向其 `ASC` 的指针，`ASC`通过查找该接口函数在系统内部进行交互。
 
 # 附加在Actor还是PlayerState上
 
