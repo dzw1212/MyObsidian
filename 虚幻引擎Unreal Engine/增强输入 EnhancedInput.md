@@ -33,10 +33,65 @@ IA_Move为2维数据类型，IA_Jump则为触发条件为Press的bool数据类�
 
 ![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231210140705.png)
 
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250209174615.png)
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250209174649.png)
 
 # 启用
 
-![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231210135534.png)
+![1200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231210135534.png)
+
+如果是使用代码：
+
+```cpp
+#include "EnhancedInputSubsystems.h"
+
+void AMyPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	check(AuraInputMappingContext);
+
+	auto EnhancedInputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+	if (EnhancedInputSubsystem)
+	{
+		EnhancedInputSubsystem->AddMappingContext(AuraInputMappingContext, 0);
+	}
+}
+```
+
+
+绑定InputAction与对应的处理接口：
+
+```cpp
+void AAuraPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+
+	auto EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(InputComponent);
+	EnhancedInputComponent->BindAction(AuraInputAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::Move);
+}
+
+void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
+{
+	auto InputAxisVector = InputActionValue.Get<FVector2D>();
+
+	FRotator YawRotation(0.f, GetControlRotation().Yaw, 0.f);
+	FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+	FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+
+	auto ControlledPawn = GetPawn<APawn>();
+	if (!ControlledPawn)
+		return;
+
+	ControlledPawn->AddMovementInput(ForwardDirection, InputAxisVector.Y);
+	ControlledPawn->AddMovementInput(RightDirection, InputAxisVector.X);
+}
+```
+
+*之所以可以直接将InputComponent转为EnhancedInputComponent，是因为项目设置->输入下：*
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250209185005.png)
 
 
 # 优先级

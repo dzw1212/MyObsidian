@@ -2,6 +2,9 @@
 
 *提示：如果你不希望某个属性出现在编辑器的属性列表中，可以使用 Meta = (HideInDetailsView) 属性指定符*
 
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250213205246.png)
+
+
 # 核心特点
 
 - **数据驱动**：`GameplayAttribute`通常与数据表（如`UDataTable`）结合使用，允许游戏设计师通过配置而非硬编码的方式定义和修改属性。
@@ -9,11 +12,25 @@
 - **与GameplayEffect交互**：在`GAS`中，`GameplayEffect`用于修改`GameplayAttribute`，例如，一个“治疗”效果可能会增加角色的生命值属性。
 - **网络复制**：`GAS`设计用于多人游戏，因此`GameplayAttribute`支持网络复制，确保所有玩家客户端的游戏状态同步。
 
+# 预测 Prediction
+
+假如一个属性要修改，客户端无需等待服务器检测通过后再同步数据，而是在本地直接修改；如果服务器检测不通过，可以回滚客户端的修改；
+
+这样可以减少玩家感受到的延迟。例如，当玩家按下攻击按钮时，客户端可以立即显示攻击动画，而不必等待服务器的确认；
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250213210423.png)
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250213210444.png)
+
+
 # 基础值与当前值
 
 一个属性由两个值组成——`BaseValue`（基础值）和 `CurrentValue`（当前值）。`BaseValue` 是属性的永久值，而 `CurrentValue` 是 `BaseValue` 加上来自 `GameplayEffects` 的临时修改。
 
 例如，你的角色可能有一个移动速度属性，`BaseValue` 为 600 单位/秒。由于还没有 `GameplayEffects` 修改移动速度，`CurrentValue` 也是 600 单位/秒。如果她获得一个临时的 50 单位/秒的移动速度增益，`BaseValue` 保持不变为 600 单位/秒，而 `CurrentValue` 现在是 600 + 50，总共 650 单位/秒。当移动速度增益消失时，`CurrentValue` 恢复到 `BaseValue` 的 600 单位/秒。
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250213210607.png)
+
 
 ## GameplayEffect与属性值的修改
 
@@ -70,7 +87,7 @@ void UGDAttributeSetBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 }
 ```
 
-如果是元属性这样不需要复制的，则无需`OnRep`与`GetLifetimeReplicatedProps`；
+如果是元属性这种不需要复制的，则无需`OnRep`与`GetLifetimeReplicatedProps`；
 ### Getter与Setter宏
 
 使用宏来定义`GameplayAttribute`的`getter`和`setter`方法是一种简化代码和提高可维护性的技术。这些宏背后的原理是预处理器指令，它们在编译时会展开成实际的代码，从而减少了手动编写重复代码的需要。
@@ -138,7 +155,21 @@ GAMEPLAYATTRIBUTE_VALUE_INITTER(AttributeName)
 
 ## 初始化属性
 
-初始化一个属性有多种方法，`UE`推荐使用一个瞬时的`GameplayEffect`来完成该操作；
+初始化一个属性有多种方法，**`UE`推荐使用一个瞬时的`GameplayEffect`来完成该操作**；
+
+### 直接初始化
+
+```cpp
+UAuraAttributeSet::UAuraAttributeSet()
+{
+	InitHealth(50.f);
+	InitMaxHealth(100.f);
+	InitMana(50.f);
+	InitMaxMana(100.f);
+}
+```
+
+### 通过GameplayEffect初始化
 
 ```cpp
 void AMyCharacter::InitializeAttributes()
@@ -162,6 +193,21 @@ void AMyCharacter::InitializeAttributes()
     }
 }
 ```
+
+### 通过DataTable初始化
+
+*该功能还处于开发阶段，最大值最小值还不生效*
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250218002237.png)
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250218002634.png)
+
+然后在`ASC`的详情面板中指定该表格：
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250218003258.png)
+
+
+
 ## 属性修改预处理
 
 可以使用`PreAttributeChange`对属性的修改进行预处理，其传入`NewValue`的引用，一般会在该函数中对值进行`clamp`处理；
@@ -183,6 +229,19 @@ void UYourAbilitySystemComponent::PreAttributeChange(const FGameplayAttribute& A
 ```
 
 需要注意的是，只有从`ASC`中访问该属性才会应用`PreAttributeChange`，如果是通过其他途径访问属性值（比如`GameplayEffectExecutionCalculations`和`ModifierMagnitudeCalculations`）需要重新进行`clamp`处理；
+
+比如在后处理中再次`clamp`：
+```cpp
+void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
+{
+	Super::PostGameplayEffectExecute(Data);
+
+	if (Data.EvaluatedData.Attribute == GetHealthAttribute())
+	{
+		SetHealth(FMath::Clamp<float>(GetHealth(), 0.f, GetMaxHealth()));
+	}
+}
+```
 
 推荐`PreAttributeChange`中仅进行限值处理，和游戏逻辑相关的操作应该放在`UAbilitySystemComponent::GetGameplayAttributeValueChangeDelegate`中进行处理；
 
@@ -341,7 +400,23 @@ ASC->ApplyGameplayEffectToSelf(DamageEffect, 1.0f, ASC->MakeEffectContext());
 
 *注意：如果在PIE（Play In Editor）中使用多个客户端，需要在编辑器首选项中禁用“Run Under One Process”，否则派生属性在第一个客户端之外的其他客户端上，其独立属性更新时不会更新；*
 
-### 使用示例
+
+### 派生属性设计
+
+在设计游戏前，需要思考哪些是主要属性，哪些是基础这些主要属性的派生属性（次要属性）；
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250218211133.png)
+
+### 建立与主要属性的关联
+
+可以在一开始就施加一个类型为`Infinite`的`GameplayEffect`来关联主要属性与次要属性；
+
+比如建立次要属性`Armor`与主要属性`Resilience`之间的关系：
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250218222753.png)
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250218223125.png)
+
+### 代码方式
 
 假如我需要一个衍生属性D，其值为普通属性$A+B*C$：
 
@@ -410,6 +485,7 @@ ModifierInfo.ModifierMagnitude = FGameplayEffectModifierMagnitude(UMyMagnitudeCa
 Effect->Modifiers.Add(ModifierInfo);
 ```
 
+
 # 属性集
 
 属性集`AttributeSet`负责定义、保存、管理对属性值的修改，用户应该子类化`UAttributeSet`，在`OwnerActor`的构造函数中创建一个属性集或自动将其注册到`ASC`中（以上操作需在C++中完成）；
@@ -467,7 +543,7 @@ void AGSWeapon::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracke
 
 `GameplayAttribute`通过C++类`FGameplayAttribute`实现。开发者需要在自己的代码中定义具体的属性，通常是通过继承`UAttributeSet`类来实现的。`UAttributeSet`类为属性提供了存储、管理和复制的功能。
 
-# 示例
+## 示例
 
 假设你正在开发一个有生命值（`Health`）和法力值（`Mana`）的角色，你可能会这样定义你的`AttributeSet`：
 

@@ -4,7 +4,8 @@
 
 附加了 `ASC` 的 `Actor` 被称为 `ASC` 的 `OwnerActor`。`ASC` 的物理表现 `Actor` 被称为 `AvatarActor`。`OwnerActor` 和 `AvatarActor` 可以是同一个 `Actor`，例如在 MOBA 游戏中的简单 AI 小兵。它们也可以是不同的 `Actor`，例如在 MOBA 游戏中由玩家控制的英雄，其中 `OwnerActor` 是 `PlayerState`，而 `AvatarActor` 是英雄的 `Character` 类。大多数 `Actor` 会在自身上附加 `ASC`。如果你的 `Actor` 会重生并需要在重生之间保持 `Attributes` 或 `GameplayEffects` 的持久性（如 MOBA 中的英雄），那么 `ASC` 的理想位置是在 `PlayerState` 上。
 
-*注意：如果你的 ASC 在 PlayerState 上，那么你需要增加 PlayerState 的 NetUpdateFrequency。它在 PlayerState 上的默认值非常低，可能会导致在客户端上发生 Attributes 和 GameplayTags 更改时出现延迟或感知到的滞后。确保启用自适应网络更新频率*
+*注意：如果你的 ASC 在 PlayerState 上，那么你需要增加 PlayerState 的 NetUpdateFrequency。它在 PlayerState 上的默认值非常低，可能会导致在客户端上发生 Attributes 和 GameplayTags 更改时出现延迟或感知到的滞后。确保启用自适应网络更新频率*；
+
 
 如果 `OwnerActor` 和 `AvatarActor` 是不同的 `Actor`，则它们都应该实现 `IAbilitySystemInterface`。此接口有一个必须重写的函数 `UAbilitySystemComponent* GetAbilitySystemComponent() const`，它返回指向其 `ASC` 的指针。`ASC` 通过查找此接口函数在系统内部相互交互。
 
@@ -34,6 +35,8 @@ AMyCharacter::AMyCharacter()
 {
     // 初始化AbilitySystemComponent
     AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComp"));
+
+	AbilitySystemComponent->SetIsReplicated(true);
 }
 
 UAbilitySystemComponent* AMyCharacter::GetAbilitySystemComponent() const
@@ -41,6 +44,15 @@ UAbilitySystemComponent* AMyCharacter::GetAbilitySystemComponent() const
     return AbilitySystemComponent;
 }
 ```
+
+
+## 自定义ASC
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250212224900.png)
+
+需要添加以下模块才能通过编译；
+![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250212233107.png)
+
 
 # OwnerActor与AvatarActor
 
@@ -52,40 +64,12 @@ UAbilitySystemComponent* AMyCharacter::GetAbilitySystemComponent() const
 
 如果`OwnerActor`和`AvatarActor`是不同的`Actor`，那么这两个`Actor`都应该实现`IAbilitySystemInterface`。该接口有一个必须重载的函数，即 `UAbilitySystemComponent* GetAbilitySystemComponent() const`，它返回一个指向其 `ASC` 的指针，`ASC`通过查找该接口函数在系统内部进行交互。
 
-# 附加在Actor还是PlayerState上
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250212235225.png)
 
-`PlayerState`是一个用于存储游戏中特定玩家相关信息的类，如玩家的分数、名称、团队信息等。它是游戏中每个玩家的状态的反映，并且在多人游戏中尤其重要，因为它包含了需要在客户端之间共享的玩家信息。
+## 设置Actor时机
 
-`ASC`通常会附加到`Character`或`PlayerState`上，这取决于开发者如何设计游戏架构。
-当`ASC`附加到`PlayerState`时，意味着玩家的能力、属性和状态效果等信息是与玩家的状态直接关联的，而不是与玩家控制的角色或实体关联。这种设计允许玩家在游戏中需要重生、更换角色或实体时，保持其能力和属性不变。
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250212235823.png)
 
-如果将`ASC`附加在`PlayerState`上，那么就还需要增加 `PlayerState` 的 `NetUpdateFrequency`。该参数的默认值很低，可能会在客户端上发生属性和游戏标签等更改之前造成延迟或感觉滞后。请务必启用[[自适应网络更新频率]]（《堡垒之夜》中就使用了该功能）。
-
-# 复制模式
-
-`ASC`定义了三种不同的复制模式用于`Gameplay Effects`、`Gameplay Tags`、`Gameplay Cues`的复制（不包括`Gameplay Attributes`，其由`AttributeSet`负责复制），以适应不同的游戏类型和网络需求，这些复制模式分别是：
-
-- **Full**：每个`Gameplay Effects`都复制给每个客户端；
-- **Mixed**：`Gameplay Effects`复制给其拥有者客户端，`Gameplay Tags`和`Gameplay Cues`复制给所有人；
-- **Minimal**：`Gameplay Effects`不复制给任何人，`Gameplay Tags`和`Gameplay Cues`复制给所有人；
-
-# 创建与初始化
-
-`ASC`的创建通常在其`OwnerActor`的构造函数中完成，并被标记为“已复制”，该过程只能在C++中完成；
-
-如果报错`LogAbilitySystem: Warning: Can't activate LocalOnly or LocalPredicted ability %s when not local!`，则说明没有在客户端成功初始化`ASC`；
-
-```cpp
-AGDPlayerState::AGDPlayerState()
-{
-	// Create ability system component, and set it to be explicitly replicated
-	AbilitySystemComponent = CreateDefaultSubobject<UGDAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
-	AbilitySystemComponent->SetIsReplicated(true);
-	//...
-}
-```
-
----
 
 - 对于 `ASC` 位于 `Pawn` 上的玩家控制角色，服务器上通常在通过 `Pawn` 的 `PossessedBy()` 函数（被`Controller`控制时）进行初始化，在客户端上通过 `PlayerController` 的 `AcknowledgePossession()` 函数进行初始化。
 
@@ -163,6 +147,69 @@ void AGDHeroCharacter::OnRep_PlayerState()
 }
 ```
 
+对于AI控制的角色，直接在`BeginPlay()`中设置`ASC`即可；
+# 附加在Actor还是PlayerState上
+
+`PlayerState`是一个用于存储游戏中特定玩家相关信息的类，如玩家的分数、名称、团队信息等。它是游戏中每个玩家的状态的反映，并且在多人游戏中尤其重要，因为它包含了需要在客户端之间共享的玩家信息。
+
+`ASC`通常会附加到`Character`或`PlayerState`上，这取决于开发者如何设计游戏架构。
+当`ASC`附加到`PlayerState`时，意味着玩家的能力、属性和状态效果等信息是与玩家的状态直接关联的，而不是与玩家控制的角色或实体关联。这种设计允许玩家在游戏中需要重生、更换角色或实体时，保持其能力和属性不变。
+
+如果将`ASC`附加在`PlayerState`上，那么就还需要增加 `PlayerState` 的 `NetUpdateFrequency`。该参数的默认值很低，可能会在客户端上发生属性和游戏标签等更改之前造成延迟或感觉滞后。请务必启用[[自适应网络更新频率]]（《堡垒之夜》中就使用了该功能）。
+
+![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250209232613.png)
+
+## PlayerState添加ASC
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250212232455.png)
+
+![900](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250212232715.png)
+
+给`Actor`添加获取`ASC`的接口：
+![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250212233445.png)
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250212233739.png)
+
+给`Player State`也添加这个接口；
+
+然后在[[#设置Actor时机]]时，顺便把`PlayerState`上的`ASC`设为自己的；
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250213003935.png)
+
+
+# 复制模式
+
+`ASC`定义了三种不同的复制模式用于`Gameplay Effects`、`Gameplay Tags`、`Gameplay Cues`的复制（不包括`Gameplay Attributes`，其由`AttributeSet`负责复制），以适应不同的游戏类型和网络需求，这些复制模式分别是：
+
+- **Full**：每个`Gameplay Effects`都复制给每个客户端；
+- **Mixed**：`Gameplay Effects`复制给其拥有者客户端，`Gameplay Tags`和`Gameplay Cues`复制给所有人；
+- **Minimal**：`Gameplay Effects`不复制给任何人，`Gameplay Tags`和`Gameplay Cues`复制给所有人；
+
+一般来说，对于AI控制的角色会选择**Minimal**，对于玩家会选择**Mixed**；
+```cpp
+AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
+```
+
+PS：如果选择`Mixed`模式，需要确保`OwnerActor`的`Owner`为`Controller`，对于`PlayerState`，其`Owner`会自动被设为`Controller`；对于其他，需要在`PossessBy()`时，通过`SetOwner()`来设置`OwnerActor`的`Owner`；
+
+# 创建与初始化
+
+`ASC`的创建通常在其`OwnerActor`的构造函数中完成，并被标记为“已复制”，该过程只能在C++中完成；
+
+如果报错`LogAbilitySystem: Warning: Can't activate LocalOnly or LocalPredicted ability %s when not local!`，则说明没有在客户端成功初始化`ASC`；
+
+```cpp
+AGDPlayerState::AGDPlayerState()
+{
+	// Create ability system component, and set it to be explicitly replicated
+	AbilitySystemComponent = CreateDefaultSubobject<UGDAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	AbilitySystemComponent->SetIsReplicated(true);
+	//...
+}
+```
+
+---
+
 # ActivableAbilities
 
 在 `FGameplayAbilitySpecContainer ActivatableAbilities` 中，如果想要遍历 `ActivatableAbilities.Items`，请务必在循环上方添加 `ABILITYLIST_SCOPE_LOCK();`；作用域中的每个 `ABILITYLIST_SCOPE_LOCK(); `都会递增 `AbilityScopeLockCount`，并在其退出作用域时递减。请勿尝试在 `ABILITYLIST_SCOPE_LOCK();` 的作用域内移除能力（清除能力函数会在内部检查 `AbilityScopeLockCount`，以防止在列表被锁定时移除能力）。
+

@@ -12,6 +12,10 @@
 
 使用`Gameplay Tags`系统，开发者可以构建出更加模块化和可重用的游戏逻辑，提高游戏开发的效率和灵活性。
 
+![900](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250216165323.png)
+
+
+
 # 在GAS中的使用
 
 在给对象赋予标签时，如果对象拥有`ASC`，通常会将标签加在`ASC`上，以便于`GAS`交互，`UAbilitySystemComponent`中实现了`IGameplayTagAssetInterface`，提供了访问标签的接口；
@@ -78,7 +82,8 @@ void UMyClass::OnTagChanged(const FGameplayTag Tag, int32 NewCount)
 }
 ```
 
-# 标签配置文件
+# 如何配置标签
+## 通过配置文件
 
 `Gameplay Tag`系统的配置通常是通过一个名为`DefaultGameplayTags.ini`的配置文件进行的。这个文件位于项目的`Config`目录下。通过编辑这个文件，你可以定义和组织你的游戏中使用的所有`Gameplay Tags`。
 
@@ -98,13 +103,7 @@ void UMyClass::OnTagChanged(const FGameplayTag Tag, int32 NewCount)
 
 这里的`+GameplayTags=`条目用于添加新的标签，`TagName`指定了标签的完整名称，而可选的`Comment`字段则为标签提供了描述。
 
-# 标签编辑器
-
-除了手动编辑`DefaultGameplayTags.ini`文件外，UE的编辑器也提供了一个可视化的`Gameplay Tag`编辑器，允许你在不直接编辑配置文件的情况下管理标签。你可以在编辑器中通过导航到`Edit` -> `Project Settings` -> `Gameplay Tags`来访问和配置这些标签。
-
-通过使用`Gameplay Tag`编辑器，你可以更加直观地添加、编辑和组织你的标签，同时也可以查看和管理标签的层次结构。编辑器中的改动会自动更新到`DefaultGameplayTags.ini`文件中，确保了配置的一致性和可追踪性。
-
-# 模块化的标签INI文件
+### 模块化的标签INI文件
 
 如果你创建了一个包含自己 .ini 文件的插件，并且这些文件中包含 `GameplayTags`，你可以在插件的 `StartupModule()` 函数中加载该插件的 `GameplayTag` .ini 目录。
 
@@ -123,4 +122,23 @@ void FCommonConversationRuntimeModule::StartupModule()
 ```
 
 如果插件启用，这将查找目录 `Plugins\CommonConversation\Config\Tags`，并在引擎启动时将其中任何包含 `GameplayTags` 的 .ini 文件加载到你的项目中。
+
+## 通过标签编辑器
+
+除了手动编辑`DefaultGameplayTags.ini`文件外，UE的编辑器也提供了一个可视化的`Gameplay Tag`编辑器，允许你在不直接编辑配置文件的情况下管理标签。你可以在编辑器中通过导航到`Edit` -> `Project Settings` -> `Gameplay Tags`来访问和配置这些标签。
+
+通过使用`Gameplay Tag`编辑器，你可以更加直观地添加、编辑和组织你的标签，同时也可以查看和管理标签的层次结构。编辑器中的改动会自动更新到`DefaultGameplayTags.ini`文件中，确保了配置的一致性和可追踪性。
+
+![900](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250216170401.png)
+
+
+## 通过DataTable
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250216171612.png)
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250216181723.png)
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250216181837.png)
+
+
 

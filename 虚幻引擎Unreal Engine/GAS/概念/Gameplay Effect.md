@@ -13,6 +13,10 @@
 
 FYI：`UGameplayEffect`是一个纯数据类，不应在其中添加任何的逻辑；
 
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250215200048.png)
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250215200330.png)
+
 # 分类
 
 ![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240722011413.png)
@@ -28,6 +32,11 @@ FYI：`UGameplayEffect`是一个纯数据类，不应在其中添加任何的逻
 	
 3. 周期的（`Periodic`）
 	定期触发的效果。它们在一定周期内重复触发，每次触发都像瞬时效果一样立即发生。周期效果可以用于模拟如每秒恢复生命值这样的效果。周期效果通常有一个开始和结束时间，效果在这段时间内周期性地发生；
+
+
+各个类型是修改基础值还是当前值：
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250215222417.png)
 
 
 
@@ -69,9 +78,17 @@ if (ContextHandle.IsValid())
 
 有多种方法来应用`GameplayEffect`，通常接口会使用`ApplyGameplayEffectToXXX`的形式，这些接口最终都会调用目标身上的`UAbilitySystemComponent::ApplyGameplayEffectSpecToSelf`函数；
 
+![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250215214011.png)
+
+然后蓝图中创建一个`GE`的蓝图：
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250215214058.png)
+
 # 移除GE
 
 同样的，有很多方法来移除`GameplayEffect`，通常接口采用`RemoveActiveGameplayEffect`的形式，最终都会调用目标身上的`FActiveGameplayEffectsContainer::RemoveActiveEffects`函数；
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250218203615.png)
 
 # 监听GE
 
@@ -229,14 +246,63 @@ float FAggregatorModChannel::MultiplyMods(const TArray<FAggregatorMod>& InMods, 
 
 ## 修改器幅度类型 Modifier Magnitude
 
+### 可扩展浮点数
+
 - **Scalable Float**
 	`FScalableFloats` 是一种可以指向数据表的结构，该数据表以变量为行，以等级为列。可缩放浮点数会自动读取指定表格行在能力当前等级（或不同等级，如果在 `GameplayEffectSpec` 中被覆盖）下的值。该值还可以通过系数进一步操作。如果没有指定数据表/行，则会将该值视为 1，因此可以使用系数在所有级别硬编码一个值；
 
+### 基于属性
+
 - **Attribute Based**
-	基于属性的修改器获取源（创建 `GameplayEffectSpec` 的用户）或目标（接收 `GameplayEffectSpec` 的用户）上的支持属性的当前值或基准值，并通过系数和前后系数添加对其进行进一步修改。快照是指在创建 `GameplayEffectSpec` 时捕获后备属性，而不快照是指在应用 `GameplayEffectSpec` 时捕获属性；
+	基于属性的修改器获取源（创建 `GameplayEffectSpec` 的用户）或目标（接收 `GameplayEffectSpec` 的用户）上的支持属性的当前值或基准值，并通过系数和前后系数添加对其进行进一步修改。快照是指在创建 `GameplayEffectSpec` 时捕获后备属性，而不快照是指在每次应用 `GameplayEffectSpec` 时实时捕获属性；
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250218204722.png)
+
+#### 多个修饰符的运算顺序
+
+对于加法，比如有三个均为加法的`Attribute Based`修改器：
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250218203957.png)
+
+如果中间混有乘法或除法，则按照顺序计算：
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250218204330.png)
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250218204511.png)
+
+#### 系数、预乘加值与后乘加值
+
+定义了修饰符内部的运算顺序：
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250218205241.png)
+
+
+### 自定义计算类
 
 - **Custom Calculation Class**
 	自定义计算类为复杂的修改器提供了最大的灵活性。该修改器使用 `ModifierMagnitudeCalculation` 类，并可通过系数、系数前添加和系数后添加进一步处理生成的浮点数值；
+
+相比上面提供的方法，`MMC`具有更多的灵活性，比如将其他非`Attribute`的变量纳入计算：
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250218230248.png)
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250219211228.png)
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250219211505.png)
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250219214416.png)
+
+定义要捕获的属性`Vigor`：
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250219214451.png)
+
+在`CalcuteBaseMagnitude_Implementation`中实现计算逻辑：
+
+![750](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250219214557.png)
+
+在`GE`中指定使用这个`MMC`：
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250219215136.png)
+
+
+
+### 由调用者设置
 
 - **Set By Caller**
 	`SetByCaller` 修改器是在运行时由能力或在 `GameplayEffectSpec` 上制作 `GameplayEffectSpec` 的人员在 `GameplayEffect` 外部设置的值。例如，如果要根据玩家按住按钮的时间来设置伤害，就需要使用 `SetByCaller`。`SetByCaller` 本质上是 `TMap<FGameplayTag,float>`，它存在于 `GameplayEffectSpec` 中。修改器只是告诉聚合器查找与所提供的 `GameplayTag` 相关联的 `SetByCaller` 值。修改器使用的 `SetByCaller` 只能使用 `GameplayTag` 版本的概念。此处禁用 `FName` 版本。如果修改器被设置为 `SetByCaller`，但 `GameplayEffectSpec` 上不存在具有正确 `GameplayTag` 的 `SetByCaller`，游戏将抛出运行时错误并返回 0 值；
@@ -329,6 +395,13 @@ public:
 -  按目标聚合 **Aggregator by Target**
 	效果会根据目标进行堆叠，不论效果的来源是谁；
 	无论源是什么，目标上都只有一个堆栈实例，但不得超过共享堆栈限制；
+
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250215230009.png)
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250215230127.png)
+
+
 
 # 赋予新能力的GE
 
