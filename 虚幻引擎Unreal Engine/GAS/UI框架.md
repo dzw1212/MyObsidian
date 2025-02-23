@@ -53,4 +53,30 @@
 
 步骤：
 
+1. 为了避免在cpp中频繁通过`RequestGameplayTag`来获取，直接在cpp中创建`Native GameplayTag`；
+
 ![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250221012303.png)
+
+创建一个单例`Native GameplayTag`用来创建`Attribute`对应的`Tag`，并且在自定义的`AssetManager`中初始化；
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250222173711.png)
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250222173930.png)
+
+![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250222180813.png)
+
+
+然后在`/Config/DefaultEngine.ini`中设置`AssetManager`类：
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250222174058.png)
+
+打开编辑器，可以看到`Native GameplayTag`成功添加：
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250222174132.png)
+
+至此之后，在cpp中任意处可以通过`FAuraGameplayTags::Get().Attributes_Secondary_XXX`来获取标签；
+
+2. 每个UI控件有自己单独的Tag，当接受到事件后，会比对Tag，如果对应上了再进行下一步操作；
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250223155708.png)
+

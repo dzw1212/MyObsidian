@@ -16,6 +16,10 @@
 	基本的移动输入
 	与UI界面的交互
 
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250223152129.png)
+
+
+
 # 流程图
 
 ![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/abilityflowchartsimple.png)
@@ -100,9 +104,16 @@ void UGSAbilitySystemComponent::AbilityLocalInputPressed(int32 InputID)
 
 像一个`ASC`赋予能力，`ASC`会将该能力添加到其可激活能力列表中，之后它就可以在满足`GameplayTag`的要求的情况下激活该技能；
 
-在服务器上赋予能力时，服务器会自动将`GameplayAbilitySpec`复制到拥有该能力的客户端上，其他客户端或模拟代理则不会收到该能力实例；
+能力应该在服务器端赋予，之后服务器会自动将`GameplayAbilitySpec`复制到拥有该能力的客户端上，其他客户端或模拟代理则不会收到该能力实例；
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250223153355.png)
+
 
 # 激活能力
+
+能力被激活之后，机会处于`Active`状态，直到结束或者被取消；
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250223155208.png)
+
 
 一般来说，一个能力会在其指定的按键按下、并且满足标签要求时被激活，但这并不是激活能力的唯一方式；`ASC`还提供了另外四种激活能力的方法：
 
@@ -132,7 +143,22 @@ bool TriggerAbilityFromGameplayEvent(FGameplayAbilitySpecHandle AbilityToTrigger
 
 这种方法可以传递包含用户数据的信息；
 
-## 被动能力
+## 搭配增强输入
+
+[[增强输入 EnhancedInput]]
+
+建立标签与`InputAction`之间的关联：
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250223183543.png)
+
+
+自定义`EnhancedInputComponent`类，并设为“默认输入组件类”，方便绑定输入事件：
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250223203847.png)
+
+通过传递不同的`GameplayTag`来区分不同的事件；
+![850](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250223204336.png)
+
+
+## 激活被动能力
 
 实现自动激活并持续运行的被动能力，需要覆写`UGDGameplayAbility::OnAvatarSet`，该函数在能力被授予一个角色并且该角色的`Avatar`（如`Actor`或`Character`）被设置时调用；
 
@@ -274,6 +300,11 @@ virtual void DestroyActiveState();
 
 BTW：`UAbilityTask` 构造函数会强制执行一个硬编码的全游戏范围最大值，即同时运行 1000 个并发能力任务，这在一些有数百个角色的游戏中需要注意；
 
+`AbilityTask`在cpp与蓝图均可以执行：
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250223153054.png)
+
+
 ## 使用能力任务
 
 比如播放动画蒙太奇的任务：
@@ -287,6 +318,31 @@ Task->EventReceived.AddDynamic(this, &UGDGA_FireGun::EventReceived);
 Task->ReadyForActivation();
 ```
 
+# 能力类的属性
+
+## 标签
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250223164911.png)
+
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250223164823.png)
+
+## 实例化策略
+
+`Non-Instanced`拥有最佳性能，就类似于一组静态函数，但是由于其没有任何示例，也就不能储存任何信息；
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250223165917.png)
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250223165521.png)
+
+
+## 网络执行策略
+
+`Local Only`适合一些纯客户端表现、且不需要与其他玩家交互的技能；
+`Server Only`适合被动技能、光环等，
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250223170007.png)
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250223165927.png)
 
 # 示例
 
@@ -349,11 +405,11 @@ if (!AbilitySystemGlobals.ShouldIgnoreCosts() && !CheckCost(Handle, ActorInfo, O
 ![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240716075240.png)
 
 
-# Gameplay Ability Actor
+# 能力Actor
 
 ![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240715225934.png)
 
-## Target Actor
+## TargetActor
 
 `GameplayAbilityTargetActor` 是一个用于处理目标选择的类。它提供了一种机制，让玩家或AI能够选择目标或目标区域，以便应用能力效果。`GameplayAbilityTargetActor` 可以用于多种目标选择方式，例如单个目标、区域目标、射线检测等。
 
@@ -364,7 +420,7 @@ if (!AbilitySystemGlobals.ShouldIgnoreCosts() && !CheckCost(Handle, ActorInfo, O
 
 虚幻中预先提供了一些`Target Actor`的子类：
 
-# Radius
+### Radius
 
 `AGameplayAbilityTargetActor_Radius` 会定义一个圆形区域，通常通过一个半径值来确定该区域的大小；
 
