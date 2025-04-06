@@ -12,16 +12,23 @@ AI行为树是一种用于控制角色行为的图形化工具，用于实现游
 
 ## 复合节点 Composite
 
-用于组织和控制其他节点执行顺序和逻辑，主要分为两类：
-1. 选择器`Selector`：按照优先级一次尝试执行子节点，一旦某个子节点返回成功，则整个选择器节点返回成功；如果子节点返回失败，则执行下一个子节点直到某个子节点成功或全部失败；
+用于组织和控制其他节点执行顺序和逻辑；
+
+### 选择器 Selector
+
+按照优先级依次尝试执行子节点，一旦某个子节点返回成功，则整个选择器节点返回成功；如果子节点返回失败，则执行下一个子节点直到某个子节点成功或全部失败；
 
 ![150](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240104013036.png)
 
-2. 序列`Sequence`：按顺序执行子节点，只有当全部子节点都返回成功时，序列节点才返回成功；只要有一个子节点返回失败，则整个序列节点返回失败；
+### 序列 Sequence
+
+按顺序执行子节点，只有当全部子节点都返回成功时，序列节点才返回成功；只要有一个子节点返回失败，则整个序列节点返回失败；
 
 ![150](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240104013108.png)
 
-3. 并行节点`Parallel`：左边部分为主任务，只能执行简单的任务；右边部分为并行任务，可以执行复杂任务，与主任务同时进行；
+### 并行 Parallel
+
+左边部分为主任务，只能执行简单的任务；右边部分为并行任务，可以执行复杂任务，与主任务同时进行；
 
 ![350](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240116032804.png)
 
@@ -102,8 +109,26 @@ AI行为树是一种用于控制角色行为的图形化工具，用于实现游
 
 ![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240106234757.png)
 
-其中`Observer aborts`定义了当装饰器的条件发生变化时，行为树应该如何响应：
+`Notify Observer`用于控制节点执行状态的通知时机：
+- `On Result Change`: 只有当节点结果发生变化时才通知；
+```cpp
+bool isInSight = true;
+// 只在以下情况触发：
+isInSight = false; // 触发，因为从true变为false
+isInSight = false; // 不触发，因为false没有变化
+isInSight = true;  // 触发，因为从false变为true
+```
+- `On Value Change`: 当被观察的值发生改变时通知；
+```cpp
+float health = 100.0f;
+// 在以下情况触发：
+health = 90.0f;  // 触发，因为值从100变为90
+health = 80.0f;  // 触发，因为值从90变为80
+health = 80.0f;  // 不触发，因为值没有变化
+```
 
+
+`Observer aborts`定义了当装饰器的条件发生变化时，行为树应该如何响应：
 - `None`: 条件的变化不会导致当前运行的行为被中断；
 - `Self`: 如果这个装饰器监视的条件发生了变化，只有这个装饰器所装饰的任务会被中断；
 - `Lower Priority:` 如果这个装饰器监视的条件发生了变化，它将中断在行为树中优先级低于这个装饰器节点的所有任务；
@@ -143,7 +168,7 @@ AI行为树是一种用于控制角色行为的图形化工具，用于实现游
 
 ## 自定义任务节点
 
-自定义FindRandomTarget任务节点实现如下：
+自定义`FindRandomTarget`任务节点实现如下：
 
 ![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240104020429.png)
 
@@ -157,6 +182,12 @@ AI行为树是一种用于控制角色行为的图形化工具，用于实现游
 
 
 ![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20240104020315.png)
+
+注意：如果想要AI Actor平滑地转向，需要开启Actor中`CharacterMovementComponent`的`Use Controller Desired Retation`：
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250311010453.png)
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250311011117.png)
 
 
 # EQS系统

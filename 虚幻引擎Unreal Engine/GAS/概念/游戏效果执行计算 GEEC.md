@@ -2,6 +2,14 @@
 
 `GEEC`仅可用于瞬时和周期性的`GameplayEffect`；
 
+![900](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250308000210.png)
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250308013215.png)
+
+# 使用方式
+
+## 继承并实现Execution接口
+
 ```cpp
 // MyDamageExecutionCalc.h
 #pragma once
@@ -22,25 +30,36 @@ public:
 };
 ```
 
-```cpp
-// MyDamageExecutionCalc.cpp
-#include "MyDamageExecutionCalc.h"
-#include "AbilitySystemComponent.h"
-#include "GameplayEffectTypes.h"
+继承基类`UGameplayExecutionCalculation`内的虚函数：
 
-UMyDamageExecutionCalc::UMyDamageExecutionCalc()
-{
-    // 在这里可以添加相关的属性依赖，例如依赖于攻击力或防御力
-    RelevantAttributesToCapture.Add(FAggregatorEvaluateMetaData(TEXT("攻击力"), EGameplayEffectScopedModifierAggregatorType::CapturedAttributeBacked));
-}
+![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250308140214.png)
 
-void UMyDamageExecutionCalc::Execute_Implementation(const FGameplayEffectCustomExecutionParameters& ExecutionParams, FGameplayEffectCustomExecutionOutput& OutExecutionOutput) const
-{
-    float AttackPower = 0.f;
-    ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(FAggregatorEvaluateMetaData(TEXT("攻击力"), EGameplayEffectScopedModifierAggregatorType::CapturedAttributeBacked), FAggregatorEvaluateParameters(), AttackPower);
+## 捕获属性
 
-    float Damage = AttackPower * 2.0f; // 假设伤害是攻击力的两倍
+在[[修饰符幅度计算 MMC]]中，属性是通过`FGameplayEffectAttributeCaptureDefinition`来捕获的：
 
-    OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(FAggregatorEvaluateMetaData(TEXT("生命值"), EGameplayEffectScopedModifierAggregatorType::OutgoingGE), EGameplayModOp::Additive, -Damage));
-}
-```
+![650](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250308143135.png)
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250308143201.png)
+
+GEEC中也是通过类似的做法，不过GEEC提供了一些宏来帮忙捕获属性：
+
+![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250308150032.png)
+
+对应关系是：
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250308151229.png)
+
+`DECLARE`然后`DEFINE`之后，同样还需要添加进`RelevantAttributesToCapture`中；
+
+## 添加Modifier
+
+![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250308155013.png)
+
+---
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250308155212.png)
+
+# GameplayEffect中指定GEEC
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250308155541.png)
+

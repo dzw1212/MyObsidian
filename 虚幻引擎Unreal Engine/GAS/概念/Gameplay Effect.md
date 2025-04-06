@@ -34,7 +34,7 @@ FYI：`UGameplayEffect`是一个纯数据类，不应在其中添加任何的逻
 	定期触发的效果。它们在一定周期内重复触发，每次触发都像瞬时效果一样立即发生。周期效果可以用于模拟如每秒恢复生命值这样的效果。周期效果通常有一个开始和结束时间，效果在这段时间内周期性地发生；
 
 
-各个类型是修改基础值还是当前值：
+## 修改基础值还是当前值
 
 ![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250215222417.png)
 
@@ -276,6 +276,8 @@ float FAggregatorModChannel::MultiplyMods(const TArray<FAggregatorMod>& InMods, 
 
 ### 自定义计算类
 
+[[修饰符幅度计算 MMC]]
+
 - **Custom Calculation Class**
 	自定义计算类为复杂的修改器提供了最大的灵活性。该修改器使用 `ModifierMagnitudeCalculation` 类，并可通过系数、系数前添加和系数后添加进一步处理生成的浮点数值；
 
@@ -301,77 +303,20 @@ float FAggregatorModChannel::MultiplyMods(const TArray<FAggregatorMod>& InMods, 
 ![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250219215136.png)
 
 
-
 ### 由调用者设置
 
 - **Set By Caller**
-	`SetByCaller` 修改器是在运行时由能力或在 `GameplayEffectSpec` 上制作 `GameplayEffectSpec` 的人员在 `GameplayEffect` 外部设置的值。例如，如果要根据玩家按住按钮的时间来设置伤害，就需要使用 `SetByCaller`。`SetByCaller` 本质上是 `TMap<FGameplayTag,float>`，它存在于 `GameplayEffectSpec` 中。修改器只是告诉聚合器查找与所提供的 `GameplayTag` 相关联的 `SetByCaller` 值。修改器使用的 `SetByCaller` 只能使用 `GameplayTag` 版本的概念。此处禁用 `FName` 版本。如果修改器被设置为 `SetByCaller`，但 `GameplayEffectSpec` 上不存在具有正确 `GameplayTag` 的 `SetByCaller`，游戏将抛出运行时错误并返回 0 值；
+	`SetByCaller` 修改器是在运行时由能力或在 `GameplayEffectSpec` 上制作 `GameplayEffectSpec` 的人员在 `GameplayEffect` 外部设置的值。例如，如果要根据玩家按住按钮的时间来设置伤害，就需要使用 `SetByCaller`。
+	
+	`SetByCaller` 本质上是 `TMap<FGameplayTag,float>`，它存在于 `GameplayEffectSpec` 中。修改器只是告诉聚合器查找与所提供的 `GameplayTag` 相关联的 `SetByCaller` 值。修改器使用的 `SetByCaller` 只能使用 `GameplayTag` 版本的概念。此处禁用 `FName` 版本。
+	
+	如果修改器被设置为 `SetByCaller`，但 `GameplayEffectSpec` 上不存在具有正确 `GameplayTag` 的 `SetByCaller`，游戏将抛出运行时错误并返回 0 值；
 
+将一个值与一个Tag建立关联：
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250305005214.png)
 
-```cpp
-#include "GameplayEffect.h"
-#include "GameplayModCalculation.h"
+`GameplayEffect`中通过Tag来获取这个值：
 
-// 自定义计算类
-class UMyCustomCalculation : public UGameplayModCalculation
-{
-public:
-    virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override
-    {
-        // 自定义逻辑，返回计算结果
-        return 100.0f;  // 示例返回值
-    }
-};
-
-// 创建一个新的 Gameplay Effect 类
-class UMyGameplayEffect : public UGameplayEffect
-{
-public:
-    UMyGameplayEffect()
-    {
-        DurationPolicy = EGameplayEffectDurationType::Instant;
-
-        // 使用 ScalableFloat
-        {
-            FGameplayModifierInfo ModifierInfo;
-            ModifierInfo.Attribute = UAttributeSet::Health;
-            ModifierInfo.ModifierOp = EGameplayModOp::Additive;
-            ModifierInfo.ModifierMagnitude = FScalableFloat(50.f);
-            Modifiers.Add(ModifierInfo);
-        }
-
-        // 使用 AttributeBased
-        {
-            FGameplayModifierInfo ModifierInfo;
-            ModifierInfo.Attribute = UAttributeSet::Damage;
-            ModifierInfo.ModifierOp = EGameplayModOp::Additive;
-            FAttributeBasedModifier AttributeBasedModifier;
-            AttributeBasedModifier.AttributeToCapture = UAttributeSet::Health;
-            AttributeBasedModifier.Coefficient = 0.1f;
-            ModifierInfo.ModifierMagnitude = FGameplayEffectModifierMagnitude(AttributeBasedModifier);
-            Modifiers.Add(ModifierInfo);
-        }
-
-        // 使用 CustomCalculationClass
-        {
-            FGameplayModifierInfo ModifierInfo;
-            ModifierInfo.Attribute = UAttributeSet::Speed;
-            ModifierInfo.ModifierOp = EGameplayModOp::Multiplicative;
-            ModifierInfo.ModifierMagnitude = FGameplayEffectModifierMagnitude(UMyCustomCalculation::StaticClass());
-            Modifiers.Add(ModifierInfo);
-        }
-
-        // 使用 SetByCaller
-        {
-            FGameplayModifierInfo ModifierInfo;
-            ModifierInfo.Attribute = UAttributeSet::Mana;
-            ModifierInfo.ModifierOp = EGameplayModOp::Additive;
-            ModifierInfo.ModifierMagnitude = FGameplayEffectModifierMagnitude(FGameplayTag::RequestGameplayTag(FName("Skill.ManaCost")));
-            Modifiers.Add(ModifierInfo);
-        }
-    }
-};
-```
 
 ## 修改器标签
 
@@ -401,6 +346,27 @@ public:
 
 ![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250215230127.png)
 
+
+# 自定义EffectContext
+
+通过自定义`GameplayEffectContext`，来传递自定义的信息；
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250308223022.png)
+
+## 实现NetSerialize
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250308223115.png)
+
+## 处理复制 Duplicate
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250308235540.png)
+## 处理StructOpsTypeTraits
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250308233633.png)
+
+## 自定义一个AbilitySystemGlobals
+
+[[Ability System Globals]]
 
 
 # 赋予新能力的GE
@@ -480,6 +446,19 @@ float UPGMMC_HeroAbilityCost::CalculateBaseMagnitude_Implementation(const FGamep
 
 2. 覆写`UGameplayAbility::GetCostGameplayEffect`，在该函数运行时读取自身的成本值并创建一个`GameplayEffect`；
 
+## 蓝图中
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250331235306.png)
+
+`Gameplay Ability`设置该`GE`：
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250331234502.png)
+
+如果成本不足，`CommitAbility`之后的节点不会执行；
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250331234656.png)
+
+
 # 作为冷却时间的GE
 
 `GameplayAbility`有一个可选的`GameplayEffect`，专门用作该能力的冷却时间；如果能力处于冷却时间中，则无法激活；
@@ -538,3 +517,13 @@ void UPGGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle, 
 ```
 
 2. 使用`MMC`；
+
+
+## 蓝图中
+
+持续时间 + 冷却Tag：
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250401000109.png)
+
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250401000156.png)

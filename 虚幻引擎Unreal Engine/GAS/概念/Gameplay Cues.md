@@ -40,6 +40,13 @@ void RemoveGameplayCue(const FGameplayTag GameplayCueTag);
 void RemoveAllGameplayCues();
 ```
 
+在蓝图中：
+	触发与这个Tag关联的所有`GameplayCue`；
+	
+![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250322153752.png)
+
+
+
 # GC管理器
 
 在`GameplayCueManager` 是一个核心组件，负责管理和调度所有与 `GameplayCues` 相关的操作；它是一个全局管理器，用于处理 `GameplayCue` 的注册、触发和执行；

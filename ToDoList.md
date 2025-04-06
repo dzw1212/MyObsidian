@@ -34,3 +34,32 @@
 	《从莎草纸到互联网 社交媒体简史》
 	《领导干部网络舆情工作指南》
 
+
+~~Blue is the warmest color ~~
+~~Shortbus (2006)~~,
+~~Love (french movie 2015)~~ 
+Y tu mam tambien, ken park, unfaithful, carrion, corn(2018),passion(2016) ,vernost(2019) ,polar(2019) 
+Antichrist or Breaking the Waves. 
+house that jack built.
+In the Realm of the Senses (1976) 
+Secretary
+Showgirls
+9 Songs 
+All Ladies Do It (Original title: Così fan tutte), Mischief 1985, A Guide For the Married Man 1967. 
+The ABC of Love and Sex: Australia Style (1978)
+Shame (2011)
+Exotica
+Irreversible
+Body Heat 
+
+ Last House on the Left
+
+Straw Dogs
+
+A Serbian Film
+
+Kids
+
+Nightingale
+
+Emmanuelle, Queen of Sados 

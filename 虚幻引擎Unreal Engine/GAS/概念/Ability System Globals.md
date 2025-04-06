@@ -3,6 +3,17 @@
 如果要对`AbilitySystemGlobals`子类化，也需要在`DefaultGame.ini`中配置：
 ```cpp
 [/Script/GameplayAbilities.AbilitySystemGlobals]
-AbilitySystemGlobalsClassName="/Script/ParagonAssets.PAAbilitySystemGlobals"
++AbilitySystemGlobalsClassName="/Script/[项目名].[类名]"
 ```
+
+---
+
+比如说如果自定义了一个`GameplayEffectContext`，那就需要新建一个`AbilitySystemGlobals`，并覆写`AllocGameplayEffectContext`方法（这个方法在`MakeEffectContext`时会用到）；
+
+[[Gameplay Effect#自定义EffectContext]]
+
+![650](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250309000931.png)
+
+![1100](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250309000442.png)
+
 

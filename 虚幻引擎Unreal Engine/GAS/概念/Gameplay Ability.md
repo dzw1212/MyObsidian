@@ -344,6 +344,9 @@ Task->ReadyForActivation();
 
 ![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250223165927.png)
 
+**如果`Ability`在客户端激活，并且策略是`Local Predicted`，客户端会立即执行（没有延迟），然后再在服务器端验证后执行（同步给其他玩家），注意客户端不能在激活任务后立即`EndAbility`，这样会导致能力无法同步到服务器端**；
+
+
 # 示例
 
 假设你想创建一个简单的火球技能，你可能会创建一个继承自`UGameplayAbility`的类，并重写`ActivateAbility`方法来定义释放火球的逻辑。

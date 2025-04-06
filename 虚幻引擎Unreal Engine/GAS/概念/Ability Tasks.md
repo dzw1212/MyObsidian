@@ -72,32 +72,61 @@ Character->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
  TagAddedTask->Added.AddDynamic(this, &UMyGameplayAbility::OnTagAdded);
 ```
 
-# 示例代码
+# 自定义Task
 
-以`WaitDelay`举例：
+![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250301140324.png)
 
-```cpp
-// MyGameplayAbility.cpp
+![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250301140412.png)
 
-#include "MyGameplayAbility.h"
-#include "AbilitySystemComponent.h"
-#include "Abilities/Tasks/AbilityTask_WaitDelay.h"
+# 网络同步问题
 
-void UMyGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
-{
-    if (HasAuthorityOrPredictionKey(ActorInfo, &ActivationInfo))
-    {
-	    //创建任务
-        UAbilityTask_WaitDelay* WaitTask = UAbilityTask_WaitDelay::WaitDelay(this, 2.0f);
-        //绑定回调
-        WaitTask->OnFinish.AddDynamic(this, &UMyGameplayAbility::OnWaitDelayFinish);
-        //激活任务
-        WaitTask->ReadyForActivation();
-    }
-}
+[[网络模式]]
 
-void UMyGameplayAbility::OnWaitDelayFinish()
-{
-    // 延迟结束后的逻辑
-}
-```
+假如现在有两个玩家，一个服务器一个客户端，
+
+在服务器上进行操作，是正常的 检测到输入->激活任务：
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250301142719.png)
+
+在客户端上进行操作，会把任务同步到服务器端进行激活：
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250301143442.png)
+
+这就导致一个问题，Task同步到服务器端，与其他数据同步到服务器端，先后顺序无法确定，这就导致服务器端的Task可能无法正常执行；
+
+比如客户端的Task中获取鼠标投影后的世界坐标，服务器端的Task中没有鼠标的屏幕空间位置数据；
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250301140117.png)
+
+为了解决这个问题，`GAS`提供了一个内置`TargetData`系统；
+
+## 内置TargetData系统
+
+`TargetData`数据同步到服务器端后，会触发一个广播事件，在服务器端有一个映射`AbilitySpec`到`TargetData`的`TargetDataMap`，供Task使用；
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250301144554.png)
+
+如果`Activate`先到，`TargetData`还没到，就在`Activate`时绑定`TargetSet`；
+如果`TargetData`先到，`Activate`还没到，就调用`CallReplicatedTargetDataDelegateIfSet`让`Target`再次广播；
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250301145216.png)
+
+
+### 初始化
+
+![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250301154743.png)
+
+### 具体操作
+
+绑定与重新触发`TargetDataDelegate`：
+
+![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250301160853.png)
+
+通过`ServerSetReplicatedTargetData`发送`TargetData`：
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250301160927.png)
+
+接收到`TargetData`事件后：
+
+![900](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250301161053.png)
+

@@ -326,70 +326,26 @@ virtual void HealthChanged(const FOnAttributeChangeData& Data);
 
 元属性通常不会被复制，其没有持久性，会被每个`Gameplay Effect`所覆盖；
 
-元属性并不是必要的，但它有如下几个优点：
-1. 更方便区分“主要属性”和“辅助属性”，便于理解；
-2. 帮助简化属性之间的依赖关系；
-3. 更偏向于数据驱动，在不修改代码的情况下调整平衡；
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250305000930.png)
 
-### 使用实例
+## 伤害
 
-比如生命值为普通属性，伤害值为元属性，用于辅助伤害计算；
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250305001035.png)
 
-1. 创建属性
-```cpp
-// MyAttributeSet.h
-#pragma once
 
-#include "CoreMinimal.h"
-#include "AttributeSet.h"
-#include "AbilitySystemComponent.h"
-#include "MyAttributeSet.generated.h"
+以`IncomingDamage`为例：
+1. 创建元属性，与其他属性不同的一点就是没有同步方法；
 
-UCLASS()
-class UMyAttributeSet : public UAttributeSet
-{
-    GENERATED_BODY()
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250305002801.png)
 
-public:
-    UPROPERTY(BlueprintReadOnly, Category = "Attributes")
-    FGameplayAttributeData Health;
+2. 在`PostGameplayEffectExecute`中处理伤害；
 
-    // Meta attribute for temporary damage storage
-    UPROPERTY(BlueprintReadOnly, Category = "Attributes")
-    FGameplayAttributeData Damage;
-};
-```
+![550](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250305002830.png)
 
-2. 创建一个`GameplayEffect`，使用元属性`Damage`存储伤害值
-```cpp
-// Create a new GameplayEffect object
-UGameplayEffect* DamageEffect = NewObject<UGameplayEffect>(GetTransientPackage(), FName(TEXT("ApplyDamage")));
-DamageEffect->DurationPolicy = EGameplayEffectDurationType::Instant;
 
-// Modifier to store damage in the Damage meta attribute
-FGameplayModifierInfo DamageStorageModifier;
-DamageStorageModifier.Attribute = UMyAttributeSet::GetDamageAttribute();
-DamageStorageModifier.ModifierOp = EGameplayModOp::Additive;
-DamageStorageModifier.ModifierMagnitude = FScalableFloat(100.f); // Assume 100 damage for example
 
-DamageEffect->Modifiers.Add(DamageStorageModifier);
 
-// Modifier to apply the stored damage to Health
-FGameplayModifierInfo HealthModifier;
-HealthModifier.Attribute = UMyAttributeSet::GetHealthAttribute();
-HealthModifier.ModifierOp = EGameplayModOp::Additive;
-HealthModifier.ModifierMagnitude = FAttributeBasedFloat();
-HealthModifier.ModifierMagnitude.Coefficient = -1.f;
-HealthModifier.ModifierMagnitude.PreMultiplyAdditiveValue = FGameplayEffectAttributeCaptureDefinition(UMyAttributeSet::GetDamageAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
 
-DamageEffect->Modifiers.Add(HealthModifier);
-```
-
-3. 应用`GameplayEffect`
-```cpp
-UAbilitySystemComponent* ASC = ...; // 获取目标的AbilitySystemComponent
-ASC->ApplyGameplayEffectToSelf(DamageEffect, 1.0f, ASC->MakeEffectContext());
-```
 ## 派生属性
 
 派生属性（`Derived Attribute`）是一种特殊的`GameplayAttribute`，它们的值是基于一个或多个其他属性（基础属性）计算得出的。这与普通的属性不同，后者的值通常直接设定或通过游戏事件直接修改；
@@ -577,4 +533,18 @@ public:
 ```
 
 在这个例子中，`Health`和`Mana`属性被定义为`FGameplayAttributeData`类型，这是`GAS`用于存储属性值的标准方式。通过在`UAttributeSet`派生类中定义这些属性，你可以在游戏中使用`GAS`的功能来修改和查询这些值。
+
+# 需要注意的地方
+
+## 1. 声明与定义
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250407000154.png)
+
+## 2. OnRep函数
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250407000247.png)
+
+## 3. 设置网络复制条件
+
+![750](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250407000419.png)
 
