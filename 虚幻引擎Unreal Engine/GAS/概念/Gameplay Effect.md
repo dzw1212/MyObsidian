@@ -527,3 +527,10 @@ void UPGGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle, 
 
 
 ![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250401000156.png)
+
+# 创建Debuff GE
+
+![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250825232512.png)
+
+![1000](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250825232547.png)
+

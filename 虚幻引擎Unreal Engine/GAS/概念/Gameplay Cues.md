@@ -19,6 +19,50 @@
 
 2. **GameplayCueNotify_Actor**：这是一个更复杂的类，它派生自 `AActor`。它可以包含更复杂的逻辑和状态，适用于需要交互或持续一段时间的效果，如持续的环境效果或者是可以与玩家互动的对象。
 
+## 创建
+
+### Notify Static
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251005120815.png)
+
+![900](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251005120830.png)
+
+设置对应的Tag：
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251005133529.png)
+
+然后触发这个Cue：
+
+![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251005164757.png)
+
+#### Burst
+
+*A one-off GameplayCueNotify that is never spawned into the world*，非常适合一次性使用；
+
+自带常用的视听效果实现，非常方便；
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251020003239.png)
+
+
+
+
+### Notify Actor
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251005164814.png)
+
+设置Tag，推荐勾选“移除时自动销毁”：
+
+![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251005164827.png)
+
+触发这个Cue：
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251005164941.png)
+
+别忘了在合适的时机移除创建出的Cue Notify Actor：
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251005165032.png)
+
+
 # 触发GC
 
 例如有一个治疗效果，你可能会在这个 `GameplayEffect` 中包含一个 `GameplayTag`，如 `GameplayCue.Health.Increase`，当效果应用时，系统会查找并触发与这个标签关联的所有 `GameplayCueNotify` 对象，从而在游戏中产生相应的视觉和声音效果；
@@ -39,12 +83,6 @@ void RemoveGameplayCue(const FGameplayTag GameplayCueTag);
 /** Removes any GameplayCue added on its own, i.e. not as part of a GameplayEffect. */
 void RemoveAllGameplayCues();
 ```
-
-在蓝图中：
-	触发与这个Tag关联的所有`GameplayCue`；
-	
-![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250322153752.png)
-
 
 
 # GC管理器
@@ -72,3 +110,22 @@ virtual bool ShouldAsyncLoadRuntimeObjectLibraries() const override
 [/Script/GameplayAbilities.AbilitySystemGlobals]
 GlobalGameplayCueManagerClass="/Script/ParagonAssets.PBGameplayCueManager"
 ```
+
+# GameplayCueNotifyPath
+
+GameplayCueNotifyPath 是一个目录配置，它告诉虚幻引擎的 Ability System 应该去哪些文件夹路径下自动搜索和加载 GameplayCue Notify 蓝图；
+
+如果没有预先配置的搜索路径，引擎在运行时就需要全项目扫描所有可能包含 GameplayCue Notify 的文件夹，这在大型项目中会非常低效，因此会有如下警告：
+
+```warning
+No GameplayCueNotifyPaths were specified in DefaultGame.ini under [/Script/GameplayAbilities.AbilitySystemGlobals]
+```
+
+推荐的做法是，把所有可能包含`GameplayCueNotify`的文件夹都添加到配置文件中：
+```ini
+[/Script/GameplayAbilities.AbilitySystemGlobals]
+GameplayCueNotifyPaths="/Game/Blueprints/GameplayCues"
+GameplayCueNotifyPaths+="/Game/Effects/Cues"
+GameplayCueNotifyPaths+="/Game/YourCustomPath"
+```
+
