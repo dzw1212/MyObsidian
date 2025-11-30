@@ -16,6 +16,8 @@
 
 # 为Widget创建ViewModel
 
+*PS：虚幻5.3后，需要至少有一个绑定的属性，才能通过这种方式正确获取到ViewModel，因此即使Widget不需要绑定ViewModel中的数据的话，也得搞个隐藏的UI来绑定字段*
+
 ## ViewModel窗口
 
 在想要创建VM的Widget中，打开VM窗口，选择VM类，创建；
@@ -74,8 +76,6 @@
 ![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251127000018.png)
 
 
-
-
 ### 5.  Resolver（解析器）
 
 这是一种**抽象的、基于逻辑**的获取方式。Resolver 是一个实现了 `UMVVMViewmodelResolver` 接口的类（通常是 C++ 类，也可以在蓝图中扩展）。
@@ -91,4 +91,32 @@
     *   **更安全**：可以在 C++ 中处理空指针检查和复杂的异常情况。
 
 
+# 绑定属性
+
+*PS：通知字段必须通过Setter函数触发，因此注意不要直接赋值*
+
+## 将成员函数声明为通知字段
+
+![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251130010752.png)
+
+使用宏`UE_MVVM_SET_PROPERTY_VALUE`来定义Setter方法：
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251130010837.png)
+
+这个宏实际上就是多了**过滤重复值**和**当值改变时发送事件**的功能：
+
+![750](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251130010951.png)
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251130011003.png)
+
+## 在Widget中绑定通知字段
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251130013040.png)
+
+
+数据流方向决定了该字段是可读、可写还是其他：
+
+![650](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251130012321.png)
+
+如果字段的类型与绑定控件属性不同，还需要经过转换：
 
