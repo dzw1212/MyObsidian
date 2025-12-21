@@ -10,9 +10,11 @@
 
 ![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250209223830.png)
 
-检测鼠标当前选中的`Actor`：
+# 鼠标射线检测
 
-![550](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250209224105.png)
+![900](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251208224419.png)
+
+
 
 为了能检测到，还需要将蓝图中的碰撞设置为阻挡`Visibility`：
 
@@ -21,4 +23,22 @@
 或者在代码中进行设置：
 
 ![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250209225009.png)
+
+# 高亮与取消高亮
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251208223335.png)
+
+## 项目启动DepthStencil
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251208234629.png)
+
+
+## 场景后处理材质
+
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251208224910.png)
+
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251208230545.png)
+
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251208231433.png)
 

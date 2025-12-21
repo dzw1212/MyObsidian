@@ -108,3 +108,86 @@ if (LoadedGame)
 
 4.  **版本控制**：
     *   如果你在开发过程中修改了 `SaveGame` 的变量结构（比如删除了一个变量），旧的存档文件可能无法完美读取。商业游戏开发通常需要编写额外逻辑来处理存档版本迁移。
+
+# 5. SaveGame标识符
+
+用于标记某个变量，使其能够被序列化系统识别为需要保存的数据；
+
+```cpp
+// MyCharacter.h
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category = "Player Stats")
+int32 Health;
+
+UPROPERTY(SaveGame)
+FString PlayerName;
+
+UPROPERTY(SaveGame)
+FTransform LastCheckpointLocation;
+```
+
+仅仅添加 `UPROPERTY(SaveGame)` **并不会自动**把数据保存到硬盘上。UE 不会自动为你执行存档操作。
+
+它的作用是配合 **序列化（Serialization）** 系统使用的。当你编写存档逻辑时，你可以利用这个标记来**自动化**数据的提取和恢复，而不需要手动一行行地写代码去复制变量。
+
+## 传统/笨拙的方法（不使用 SaveGame 标记的自动化）：
+
+如果你不利用这个标记，存档通常是这样的：
+1. 创建一个 `USaveGame` 类实例。
+2. 手动写：`SaveGameInstance->Health = MyCharacter->Health;`
+3. 手动写：`SaveGameInstance->Score = MyCharacter->Score;`
+4. 保存 `SaveGameInstance` 到硬盘。
+
+## 进阶/自动化的方法（利用 SaveGame 标记）：
+
+你可以编写一个通用的函数，接受任何对象（比如 Actor），然后利用序列化器（Archive）扫描该对象中所有带 `SaveGame` 标记的变量，并将它们转化为二进制数据（`TArray<uint8>`）保存起来。
+
+1. 创建一个`FObjectAndNameAsStringProxyArchive`（内存读写器）。
+2. 设置 `ArIsSaveGame = true`（关键步骤）。
+3. 当你对一个对象执行 `Serialize(Ar)` 时，引擎会检查属性。
+4. **如果属性有 `SaveGame` 标记，它就被写入/读取。**
+5. 如果属性没有该标记，它就被忽略。
+
+###  代码示例
+
+这是一个利用 `UPROPERTY(SaveGame)` 实现通用保存/加载功能的简化示例：
+
+#### A. 保存（序列化）
+```cpp
+void UMySaveGameSystem::SaveActorData(AActor* ActorToSave, TArray<uint8>& OutData)
+{
+    if (!ActorToSave) return;
+
+    // 创建一个内存写入器
+    FMemoryWriter MemoryWriter(OutData, true);
+    
+    // 创建一个代理归档（Archive），专门用于处理 UObject 的序列化
+    FObjectAndNameAsStringProxyArchive Ar(MemoryWriter, true);
+    
+    // 【关键】告诉归档：我们只关心标记为 SaveGame 的属性
+    Ar.ArIsSaveGame = true; 
+
+    // 执行序列化：将 Actor 中带 SaveGame 标记的变量写入 MemoryWriter (即 OutData)
+    ActorToSave->Serialize(Ar);
+}
+```
+
+#### B. 加载（反序列化）
+```cpp
+void UMySaveGameSystem::LoadActorData(AActor* ActorToLoad, const TArray<uint8>& InData)
+{
+    if (!ActorToLoad || InData.Num() == 0) return;
+
+    // 创建一个内存读取器
+    FMemoryReader MemoryReader(InData, true);
+    
+    // 同样的代理归档
+    FObjectAndNameAsStringProxyArchive Ar(MemoryReader, true);
+    
+    // 【关键】同上，只读取 SaveGame 属性
+    Ar.ArIsSaveGame = true;
+
+    // 执行反序列化：将数据写回 Actor 中带 SaveGame 标记的变量
+    ActorToLoad->Serialize(Ar);
+}
+```
