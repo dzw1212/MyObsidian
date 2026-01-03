@@ -47,15 +47,37 @@ IA_Move为2维数据类型，IA_Jump则为触发条件为Press的bool数据类�
 
 ![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231210135110.png)
 
+## IA_Move
+
 通常情况下，按键D代表向右移动，对应x轴的正方向，这也是默认的Input操作，因此按键为D时什么也不做，按键为A时只需要进行一次反转；
 
 ![300](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231210140558.png)
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20260103000307.png)
+
 
 ![600](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20231210140705.png)
 
 ![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250209174615.png)
 
 ![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20250209174649.png)
+
+![1200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251228230729.png)
+
+## IA_Look
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251228225318.png)
+
+启用Pitch：
+	弹簧臂：
+![350](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251228223130.png)
+
+如果希望禁止人物跟着Yaw旋转：
+	Movement组件：
+![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251228225100.png)
+
+![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20251228225247.png)
+
 
 # 启用
 

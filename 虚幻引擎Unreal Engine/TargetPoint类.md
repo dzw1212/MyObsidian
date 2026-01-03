@@ -88,6 +88,3 @@ for (AActor* Actor : FoundPoints)
 *   **Arrow Component (箭头组件)**：如果你只是想在一个 Actor 内部标记一个发射位置（比如枪口位置），在该 Actor 蓝图里加一个 Arrow Component 比在世界里放一个 TargetPoint 更合适。
 *   **Spline Component (样条线)**：如果你需要定义一条连续的路径（不仅仅是几个点），使用 Spline 是更好的选择。
 *   **Empty Actor**：其实空 Actor 和 TargetPoint 功能几乎一样，但 TargetPoint 自带一个特殊的 Sprite 图标，在混乱的场景中更容易被找到。
-
-### 总结
-**TargetPoint** 是虚幻引擎中连接“代码逻辑”与“关卡设计”的桥梁。它让设计师通过可视化拖拽来告诉程序：“就是这个位置，在这个地方干点什么”。
