@@ -4,7 +4,7 @@
 
 ![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20260104014617.png)
 
-# Distance Matching
+# 距离匹配
 
 玩家停止按键输入时，正在运动中的角色会受到**摩擦力Friction**与**制动阻力Braking Deceleration**等参数的影响，其位移距离是不确定的，但是停步动画的根位移长度是确定的，如果直接使用停步动画就会产生实际位移与动画不匹配的问题，因此需要**距离匹配Distance Matching**功能；
 
@@ -93,7 +93,7 @@
 
 # 侧向停步
 
-需要先取消勾选`Teleport to Explicit Time`，该节点会导致动画不连续，`Orientation Warping`无法正确计算旋转偏移：
+==需要先取消勾选`Teleport to Explicit Time`，该节点会导致动画不连续，`Orientation Warping`无法正确计算旋转偏移==：
 
 ![400](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20260104012513.png)
 
