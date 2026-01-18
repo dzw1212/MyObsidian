@@ -2,5 +2,9 @@
   "promptDelete": false,
   "autoConvertHtml": false,
   "alwaysUpdateLinks": true,
-  "focusNewTab": true
+  "focusNewTab": true,
+  "readableLineLength": true,
+  "strictLineBreaks": true,
+  "propertiesInDocument": "hidden",
+  "showIndentGuide": true
 }
