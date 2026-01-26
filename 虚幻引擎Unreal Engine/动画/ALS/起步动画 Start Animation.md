@@ -10,6 +10,9 @@
 
 ![800](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20260108221237.png)
 
+![500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20260122014320.png)
+
+
 ![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20260110194132.png)
 
 ![1200](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20260110194223.png)
@@ -22,11 +25,12 @@
 
 ## 使用Inertialization混合
 
+![450](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20260122014430.png)
 
 
 ## 同步组 Sync Group
 
-
+[[脚步同步]]
 
 # 方向扭曲与步幅调整
 
