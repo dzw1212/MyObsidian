@@ -41,3 +41,10 @@ Blend采样点：
 
 
 ![1500](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20260127024523.png)
+
+# 180度角度跳变问题
+
+当视角从180到-180时，瞄准视角会从最右边跳变到最左边，为了避免跳变，使用`FInterp To`进行平滑；
+
+![700](https://pic-1315225359.cos.ap-shanghai.myqcloud.com/20260208140118.png)
+
