@@ -53,17 +53,83 @@
 
 **结果：** 当战斗激烈、特效满天飞导致性能压力大时，引擎会优先保留 `NET_Critical` 的特效，自动清理掉 `NET_Ambient` 的特效，从而保证帧率稳定。
 
-# 4. 关键属性详解 (Technical Breakdown)
+# 4. 关键属性
 
-当你打开一个 Niagara Effect Type 资产时，重点关注 `Update` 和 `Culling` 区域：
+## Scalability
 
-1.  **Update Frequency (更新频率)：**
-    *   引擎不需要每帧都去检查这个特效是否该被剔除。你可以设置为 `Low`，比如每秒只检查 5 次，这样检查本身的开销也很低。
+* **Update Frequency (更新频率)**
+	* **作用：** 决定引擎多久检查一次这个特效是否该被剔除（比如是否超出了距离、是否不在屏幕内）。
+	* **选项：**
+		* `Continuous` ：每帧都检查。适合非常重要、需要立刻响应的特效。
+		* `Low / Medium / High`：降低检查频率。适合环境特效（比如远处的火把），晚个半秒钟剔除玩家根本感觉不到，能省下大量 CPU 算力。
+		* `Spawn Only` (仅在生成时)：只在生成的那一帧做一次检查（比如看距离够不够近），活下来了就不再管它。极度推荐用于**爆炸、枪击等瞬间爆发 (Burst) 且生命周期很短**的特效；
 
-2.  **Cull Reaction (剔除反应)：**
-    *   **Asleep / Waking:** 适合循环特效（如火堆）。离开视线暂停，回来继续。
-    *   **Deactivate / Activate:** 适合持续发射的特效。离开视线停止发射，回来重新发射。
-    *   **Kill:** 适合一次性特效（如爆炸）。没看见就直接删了，省内存。
+* **Cull Reaction (剔除反应)**
+	* **作用：** 当特效触发了剔除条件（比如离相机太远了），引擎该对它下达什么死刑指令？
+	* **选项：**
+		* `Kill`：直接销毁，释放内存。适合一次性特效（爆炸、子弹击中）。
+		* `Asleep`：暂停计算，但如果玩家走近了，它会**重新唤醒并重新开始播放**。适合雨雪等无所谓进度的特效。
+		* `Paused`：冻结在原地，玩家走近后**接着刚才的进度继续播放**。适合有明确周期动画的机关特效。
+		* `Clear`：立即清空所有已经存在的旧粒子；
 
-3.  **Significance Handler (重要性处理)：**
-    *   配合 UE 的 Significance Manager，动态计算特效的重要性（比如距离越近越重要），从而动态调整 LOD。
+* **Significance Handler (重要度处理器)**
+	* **作用：** 当同屏特效数量“超标”时（比如限制最多 10 个，现在生成了第 11 个），引擎该怎么排优先级，决定干掉谁？
+	* **选项：**
+		* `Age`：**越新的越重要**。非常适合子弹击中特效（旧的击中特效消失没关系，但新开枪的火花必须看得到）。
+		* `Distance`：**离相机越近的越重要**。适合环境特效（远处的火把不显示，近处的必须显示）；
+
+
+## System Scalability Settings
+
+这是 NET 最重要的地方，可以展开 `Low`, `Medium`, `High`, `Epic`, `Cinematic` 等不同画质级别，为每个级别单独定规矩。比如“低画质下 10 米外就剔除，史诗画质下 50 米外才剔除”。
+
+* **Max Distance (最大距离)**
+	* **作用：** 特效距离相机超过这个值，就会触发上面说的 Cull Reaction。这是最粗暴也最有效的优化手段。
+
+* **Max Effect Type Instances (最大NET实例数)**
+	* **作用：** 全局限制**当前这种 NET** 在世界中最多能存在多少个。
+	* *原理：如果设为 20，世界里生成第 21 个的时候，系统就会去问刚才的 `Significance Handler`（重要度处理器），把最不重要的那个给干掉，让出位置给新的；如果没有`Significance Handler`，则根据生成事件剔除*
+
+* **Max System Instances (最大实例数)**
+	* **作用：** 类似 Max Effect Type Instances，但粒度不同；
+
+- **Cull Proxy Mode (剔除代理模式)**
+	* **作用：** 特效被剔除后，不直接让它消失，而是用一个“廉价的假替身（Proxy）”代替它显示。
+	- *当同屏有 100 根火把，因为触发了 `Max Instances`（最大实例数 20）导致剩下 80 根火把被剔除时，如果直接让它们消失，远处就会黑掉一片，视觉效果极差。如果开启了 Cull Proxy，引擎会在后台只保留 `Max System Proxies`个火把的真实物理和逻辑计算，然后把计算出来的画面，直接“复制粘贴（渲染）”到那 80 个被剔除的火把位置上*
+
+- **Max System Proxies (最大系统代理数)**
+	* **作用：** 限制同屏最多允许出现多少个上面提到的“假替身（Proxy）”。
+
+- **Visibility Culling (可见性剔除 / 视锥体剔除)**
+	* **作用**：根据可见性剔除特效；
+	- **Allow Pre Culling by View Frustum**：需要配合`bCullByViewFrustum`一起使用，允许视锥体参与`Pre-culling`，可以在生成前就剔除掉；
+	- **Max Time Outside View Frustum**：不在视锥体内，超出该时间后剔除；
+	- **Max Time Without Render**：未渲染时，超出该时间后剔除；
+
+- **Budget Scaling (预算缩放 / 动态性能调节)**
+	- **Max Global Budget Usage**：当前特效预算超过该比例时会被剔除，预算可以通过`FX.Budget`等控制台命令设置；
+	- **Max Distance Scale by Global Budget Use**：根据当前预算缩放`Max Distance`；
+		X轴：预算比例；
+		Y轴：缩放比例；
+		*比如StartX=0.5|StartY=1.0，当预算低于0.5时不进行任何缩放；EndX=1.0|EndY=0.5，当预算达到1.0时缩放为一半；*
+	- **Max Instance Count Scale by Global Budget Use**：根据当前预算缩放`Max Effect Type Instances`；
+	- **Max System Instance Count Scale by Global Budget Use**：根据当前预算缩放`Max System Instances`；
+
+## Emitter Scalability Settings 
+
+这部分同样按画质级别（Low, Epic 等）划分，但它的作用域不是“整个特效系统”，而是里面的**某一个具体模块（Emitter）**。
+
+- **Spawn Count Scale**
+	* **作用：** 有些复杂的特效（比如大招），你不想在低画质下把它“完全剔除”，你只希望它**变简陋一点**。
+	*或者可以在具体的 Niagara 系统内部，针对某个特别耗性能的 Emitter（比如带有动态光照的火星），勾选它的 Scalability 设置，让它在 Low 画质下直接被禁用 (Disabled)，而主体的火焰继续保留。*
+
+
+## 其他高级与辅助属性
+
+* **Validation Rule Sets (验证规则集)**
+	* **作用：** 这是给技术美术（TA）用的自动化 QA 工具。你可以写一套规则（比如“所有挂了这个 NET 的特效，GPU 开销不准超过 2ms，材质里不准用半透明”）。一旦美术做超标了，保存资产时引擎就会弹红字报错。
+
+* **Performance Baseline Controller (性能基准控制器)**
+	* **作用：** 用于在引擎内自动生成这个特效的性能基线数据，方便做长期的自动化性能回归测试（通常 3A 级别的大型项目才用得上）。
+
+
