@@ -48,11 +48,85 @@ public:
 
 - **DoNotCreateDefaultSubobject**：这个方法用于阻止自动创建默认子对象，如果你不需要某个默认组件，可以使用这个方法。
 
-# 高级用法
+# 什么时候需要FObjectInitializer
 
-`FObjectInitializer` 还可以用于更复杂的初始化场景，比如条件初始化、依赖于外部数据的初始化等。你可以在构造函数中添加逻辑来处理这些情况。
+## 1. 什么时候用空参数构造函数 ？
 
-# 注意事项
+**答案：95% 的日常开发情况。**
 
-- `FObjectInitializer` 只能在构造函数中使用。
-- 它主要用于那些需要在构造时即配置好的对象，特别是那些涉及到引擎内部机制的对象（如组件的创建和配置）。
+如果你只是在创建一个新的 Actor 或 Object，给它添加一些组件（比如 StaticMesh、Camera），或者初始化一些基本变量，直接使用无参构造函数即可。引擎在底层会自动帮你处理好 `FObjectInitializer`。
+
+**示例：**
+
+```cpp
+// .h 文件
+UCLASS()
+class AMyActor : public AActor
+{
+    GENERATED_BODY()
+
+public:
+    AMyActor(); // 直接无参即可
+};
+
+// .cpp 文件
+AMyActor::AMyActor()
+{
+    // 正常创建组件、初始化变量
+    MyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MyMesh"));
+}
+
+```
+
+---
+
+## 2. 什么时候必须传入 `const FObjectInitializer&`？
+
+当你继承了一个已经写好的父类（比如引擎自带的 `ACharacter` 或你团队其他人写的基类），并且你需要**修改或删除父类在构造函数中创建的组件**时，你就必须使用它。
+
+它主要提供两个核心功能：
+
+### A. 替换父类的默认组件 (`SetDefaultSubobjectClass`)
+
+假设你继承了引擎的 `ACharacter`，引擎默认给它挂载了一个 `UCharacterMovementComponent`。但你的游戏需要特殊的移动逻辑，你写了一个 `UMyCustomMovementComponent`，你想用你的组件替换掉引擎自带的组件，且名字保持不变。
+
+**示例代码：**
+
+```cpp
+// .h 文件
+UCLASS()
+class AMyCharacter : public ACharacter
+{
+    GENERATED_BODY()
+
+public:
+    // 必须声明带有 FObjectInitializer 的构造函数
+    AMyCharacter(const FObjectInitializer& ObjectInitializer); 
+};
+
+// .cpp 文件
+// 注意这里的写法：利用初始化列表 (Initializer List) 调用 Super（父类构造函数）时进行替换
+AMyCharacter::AMyCharacter(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer.SetDefaultSubobjectClass<UMyCustomMovementComponent>(ACharacter::CharacterMovementComponentName))
+{
+    // 此时，你的角色使用的就是自定义的移动组件了
+}
+
+```
+
+### B. 阻止创建父类的默认组件 (`DoNotCreateDefaultSubobject`)
+
+假设你的父类创建了一个 `CameraComponent`，但你当前派生的这个子类是一个纯 AI 控制的敌人，不需要摄像机，你想省点性能。
+
+**示例代码：**
+
+```cpp
+// .cpp 文件
+AMyEnemyCharacter::AMyEnemyCharacter(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer.DoNotCreateDefaultSubobject(TEXT("CameraComponentName")))
+{
+    // 这样，父类中名为 "CameraComponentName" 的组件就不会被实例化了
+}
+
+```
+
